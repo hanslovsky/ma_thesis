@@ -1,0 +1,36 @@
+\chapter{Conclusion}
+\label{cha:conclusion}
+We presented two cell tracking methods which both address the problem of undersegmentation in cell
+tracking-by-assignment. The first of these methods, namely Gaussian mixture models for the
+conservation tracking method~(\cref{cha:GMM}), effectively extends the conservation tracking factor
+graph and uses the information about the number of cells per connected component to successfully
+reconstruct cell identities by the means of Gaussian mixture models. A cell tracking graphical model
+is formulated on the subset of reconstructed cells that enables the conservation tracking to track
+cells in dense populations and to effectively cope with undersegmentation errors. Furthermore, the
+tracking result for segmentations without mergers is comparable to the state of the art, chain graph
+tracking~\citep{kausler_12_discrete}, which does not have the ability to detect mergers or
+reconstruct the identities of the individual cells. Thus, the conservation tracking -- with both a
+similar performance in tracking without mergers and identity reconstruction -- has the edge over
+chain graph tracking.
+
+Our second proposed method, joint segmentation and tracking~(\cref{cha:joint}), goes beyond existing
+tracking-by-assignment methods and unifies segmentation and tracking in allowing the tracking to
+modify the segmentation and choose of the offered, potentially conflicting segmentation hypotheses
+those ones that best fit the global tracking. In the fashion of chain graph
+tracking~\citep{kausler_12_discrete} and conservation tracking~\citep{schiegg_13_conservation}, we
+present a factor graph representation of the problem, which implements both tracking and
+segmentation consistency constraints. While, as yet, the proposed method is not competitive, first
+results look promising and, with the suggested modifications in \cref{subsec:joint-continuation}, we
+are confident that the joint segmentation and tracking model will eventually produce state of the
+art results and moreover be capable of tracking cells in conditions, where other methods fail due to
+undersegmentation errors, namely very dense populations and low quality data.
+
+Future work focuses on remodeling the joint segmentation and tracking method in order to produce
+comparable results. In addition, new evaluation measures need to be introduced as -- in contrast to
+chain graph and conservation tracking, which both are applied to fixed segmentations -- the final
+segmentation result needs to be evaluated and compared with other methods as well.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End: 

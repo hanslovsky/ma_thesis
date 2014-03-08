@@ -1,0 +1,15 @@
+\begin{tikzpicture}[baseline=(image2.north)]
+    \node[anchor=south west,inner sep=0] (image2) {
+        \includegraphics[width=0.7\textwidth]{images/joint/overseg/75/02/colored01_all.png}};
+    \begin{scope}[x={(image1.south east)},y={(image2.north west)}]
+        \node[region_id] (r4) at (0.53, 0.73) {\huge{$4$}};
+        \node[region_id] (r3) at (0.5, 0.32) {\huge{$3$}};
+        \node[rectangle, draw, fit=(r3) (r4), color=red,line width=2pt, inner sep=9.3mm, text
+        width=5em, yshift=-0.7mm] (f) {};
+    \end{scope}
+\end{tikzpicture}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

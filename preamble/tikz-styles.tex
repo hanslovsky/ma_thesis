@@ -1,0 +1,126 @@
+\usetikzlibrary{shapes}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{bayesnet}
+\usetikzlibrary{snakes}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{patterns}
+\usetikzlibrary{matrix}
+\usetikzlibrary{fit}
+\usetikzlibrary{calc}
+\usetikzlibrary{shadows}
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{shapes.misc}
+
+% layers
+\pgfdeclarelayer{lower}
+\pgfdeclarelayer{upper}
+\pgfdeclarelayer{bglower}
+\pgfdeclarelayer{bgupper}
+\pgfdeclarelayer{transition}
+\pgfsetlayers{background,bglower,lower,transition,bgupper,upper,main}
+
+
+\definecolor{conflictred}{RGB}{255,0,4}
+\definecolor{detectionblue}{RGB}{21,122,255}
+\definecolor{assignmentyellow}{RGB}{255, 232, 0}
+\definecolor{countgreen}{RGB}{12, 145, 3}
+\definecolor{RVbackground}{RGB}{245, 222, 179}
+
+\tikzstyle{RVnode}=[obs, color=black, fill=RVbackground!70, ultra thick]
+\tikzstyle{Factor}=[factor, draw,color=black, thin, fill, scale=1.0]
+\tikzstyle{conflict}=[Factor, fill=red, color=conflictred]
+\tikzstyle{count}=[Factor, fill=green, color=countgreen]
+\tikzstyle{detection}=[RVnode, color=detectionblue, top color=black!0, bottom color=black!60]
+\tikzstyle{assignment}=[RVnode, color=assignmentyellow, fill=black!0, top color=black!10, bottom color=black!25]
+\tikzstyle{transitionfactor}=[Factor, fill=black, color=black]
+
+
+% GMM and Kalman
+\tikzstyle{main}=[circle, minimum size = 10mm, thick, draw =black!80, node distance = 16mm]
+\tikzstyle{hyparam}=[rectangle, minimum size = 5mm, thick, draw =black!80, fill = black!10, node distance = 16mm]
+\tikzstyle{param}=[rectangle, minimum size = 5mm, thick, draw =black!80, node distance = 16mm]
+\tikzstyle{connect}=[-latex, thick]
+\tikzstyle{selector}=[-latex, -|, snake=snake,segment amplitude=.4mm,segment length=2mm,line after snake=1mm, thick]
+\tikzstyle{shortconnect}=[-latex, thin]
+\tikzstyle{box}=[rectangle, draw=black!100]
+\tikzstyle{switch}=[circle, minimum size = 1mm, fill = black!100, draw=black!100]
+
+% hypotheses
+\definecolor{hypothesesbackground}{RGB}{99,124,179}
+\definecolor{hypothesesoneobject}{RGB}{255, 255, 0}
+\definecolor{hypothesestwoobjects}{RGB}{180, 0, 0}
+\definecolor{hypothesesthreeobjects}{RGB}{50, 50, 190}
+\definecolor{hypotheses_new_detection}{RGB}{0, 170, 0}
+\definecolor{hypothesesdivisionduplicate}{RGB}{255,0, 255}
+\tikzstyle{timestep}=[font=\huge]
+\tikzstyle{hypothesesdetection}=[draw, circle, fill=black!10, text=black]
+\tikzstyle{hypothesestransition}=[draw, thick, color=black!50]
+\tikzstyle{hypotheses_new_detection}=[hypothesesdetection, draw=hypotheses_new_detection, fill=hypotheses_new_detection!10]% densely dotted]
+\tikzstyle{hypotheses_new_transition}=[hypothesestransition, loosely dotted]
+\tikzstyle{hypotheses_detection_not_involved}=[hypothesesdetection, dashed]
+\tikzstyle{hypotheses_transition_not_involved}=[hypothesestransition, dashed]
+\tikzstyle{hypotheses_one_object}=[hypothesesdetection, draw=hypothesesoneobject,fill=hypothesesoneobject!10]
+\tikzstyle{hypotheses_two_objects}=[hypothesesdetection, draw=hypothesestwoobjects, fill=hypothesestwoobjects!10]
+\tikzstyle{hypotheses_three_objects}=[hypothesesdetection, draw=hypothesesthreeobjects, fill=hypothesesthreeobjects!10]
+\tikzstyle{hypotheses_division_duplicate}=[hypothesesdetection, draw=hypothesesdivisionduplicate, fill=hypothesesdivisionduplicate!10]
+
+
+
+
+
+% joint factor graph
+\definecolor{pinegreen}{cmyk}{0.92,0,0.59,0.25}
+\definecolor{royalblue}{cmyk}{1,0.50,0,0}
+\definecolor{lavander}{cmyk}{0,0.48,0,0}
+\definecolor{violet}{cmyk}{0.79,0.88,0,0}
+% \definecolor{assignmentyellow}{rgb}{0.9,0.65,0.2}
+% \definecolor{countgreen}{rgb}{0.1,0.7,0.3}
+% \definecolor{conflictred}{rgb}{0.9,0.15,0.1}
+\definecolor{conflictred}{RGB}{255,0,0}
+\definecolor{detectionblue}{RGB}{50,50,230}
+\definecolor{assignmentyellow}{RGB}{255,255,0}
+\definecolor{countgreen}{RGB}{0,170,0}
+\tikzstyle{cblue}=[circle, draw, thin,fill=cyan!20, scale=1.0]
+\tikzstyle{qgre}=[rectangle, draw, thin,fill=green!20, scale=0.8]
+\tikzstyle{conflict}=[rectangle, draw, thick, color=conflictred, fill=conflictred!80]
+\tikzstyle{count}=[rectangle, draw, thick, color=countgreen, fill=countgreen!80]
+\tikzstyle{detection}=[circle, draw, very thick, color=detectionblue, text=black, fill=detectionblue!10]
+% for gradient fill:top color=black!0, bottom color=black!60
+\tikzstyle{assignment}=[circle, draw, very thick, color=assignmentyellow, fill=assignmentyellow!10]
+% for gradient fill:top color=black!10, bottom color=black!25
+\tikzstyle{transfac}=[rectangle, draw, thick, fill=black, color=black]
+\tikzstyle{unaryfac}=[rectangle, draw, thick, color=detectionblue, fill=detectionblue!80]
+
+
+% joint
+\definecolor{darkred}{RGB}{120,0,0}
+\definecolor{darkgreen}{RGB}{0,120,0}
+\definecolor{darkblue}{rgb}{0,0,0.5}
+\tikzstyle{region_id}=[white,ultra thick,font=\bfseries]
+\tikzstyle{region_graph}=[circle, draw, color=darkgreen, fill=darkgreen!10, ultra thick, text=black]
+\tikzstyle{conflict_graph}=[circle, draw, color=darkred, fill=darkred!10, ultra thick, text=black]
+\tikzstyle{region_edge}=[region_graph, thick]
+\tikzstyle{conflict_edge}=[conflict_graph, thick]
+\tikzstyle{fg_det}=[hypotheses_three_objects,draw=blue!100,fill=blue!10,inner sep=2.4mm, thick]
+\tikzstyle{fg_tra}=[hypotheses_one_object, fill=hypothesesoneobject!20, thick, draw, inner
+sep=2.4mm]
+\tikzstyle{threed}=[black!70, dashed, ultra thin]
+\tikzstyle{plbg}=[rectangle, fill=darkblue!25, rounded corners=10pt, inner sep=0.5mm]
+%\tikzstyle{pllbl}=[thick, align=center, black,decorate,decoration={brace,amplitude=10pt,mirror}, transform canvas={yshift=-5}]
+\tikzstyle{pllbl}=[thick, align=center, black, transform canvas={yshift=-5}]
+
+\tikzstyle{pllbltxt}=[rectangle,black,draw=darkblue!25,fill=darkblue!12,rounded corners=8pt,inner
+sep=5,yshift=-13]
+
+
+
+\definecolor{orange}{RGB}{255,127,0}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End: 

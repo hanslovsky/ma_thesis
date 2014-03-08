@@ -1,0 +1,153 @@
+% fancy chapters
+% Options: Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
+% best are Lenny, Glenn, Bjarne and maybe Bjornstrup
+% \usepackage[Bjarne]{fncychap}
+
+% use UTF8!
+\usepackage[utf8]{inputenc}
+
+% more colors!
+\usepackage[usenames,dvipsnames]{color}
+
+% the language of thesis ; load csquotes for babel
+\usepackage{csquotes}
+\usepackage[english,german]{babel}
+
+% math and math symbols
+\usepackage[fleqn]{amsmath}
+\usepackage{empheq}
+\usepackage{amssymb}
+% \usepackage{amsart}
+
+% use si units
+\usepackage{siunitx}
+
+% fonts
+% palatino http://www.tug.dk/FontCatalogue/tgpagella/
+\usepackage{tgpagella}
+
+% better fond encoding
+\usepackage[T1]{fontenc}
+
+% \includegraphics
+\usepackage{graphicx}
+
+% tables look better
+\usepackage{booktabs}
+\setlength\heavyrulewidth{1.5pt}
+
+% tikZ
+\usepackage{tikz}
+% 3dplot for tikz
+\usepackage{tikz-3dplot}
+
+% calc
+% \usepackage{pgfmath}
+\usepackage[nomessages]{fp}
+
+
+% Link toc entry to position in text
+\usepackage{hyperref}
+
+% line numbers
+% \usepackage[modulo, switch]{lineno}
+% \linenumbers
+
+\usepackage{pdfpages}
+
+% clever references
+\usepackage[noabbrev, capitalise]{cleveref}
+
+% fix latex2e bugs
+\usepackage{fixltx2e}
+
+
+
+% References with biber. 
+\usepackage[
+    backend = biber,
+    firstinits = true,
+    % style = phys, % the phys style must be installed separately
+    sortlocale = en_US,
+    natbib = true,
+    doi = false,
+    eprint = false,
+    sorting=nyt,
+    style=authoryear,
+    maxbibnames=99,
+    maxcitenames=2,
+    uniquelist=false
+]{biblatex}
+
+% get paths
+\usepackage[abspath]{currfile}[2012/05/06]
+
+% for \eg etc.
+\usepackage{eso-pic}
+\usepackage{xspace}
+
+% scale fonts
+\usepackage{scalefnt}
+
+% subfigures and -floats
+\usepackage{subcaption}
+
+\usepackage{mathtools}
+
+\usepackage{amsthm}
+
+% get numcases
+\usepackage[fleqn]{cases}
+
+\usepackage{siunitx}
+
+\usepackage{tabularx}
+
+% doublestroke, e.g. \mathds{1}
+\usepackage{dsfont}
+
+\usepackage{multirow}
+
+\usepackage{rotating}
+
+\usepackage{nicefrac}
+
+% \totalheightof, \settototalheight
+\usepackage{calc}
+
+% mathlarger
+\usepackage{relsize}
+
+% titlepage
+\usepackage[eulerchapternumbers, pdfspacing, dottedtoc]{classicthesis}
+\usepackage{titlepage} % http://tex.stackexchange.com/questions/20177/remove-margins-for-title-page/25408#25408
+% \usepackage{arsclassica}
+\usepackage{epigraph}
+
+
+
+
+% \usepackage[singlespacing]{setspace}
+\usepackage[onehalfspacing]{setspace}
+% \usepackage[doublespacing]{setspace}
+
+% multicols
+\usepackage{multicol}
+
+% show labels, remove for final version!
+% \usepackage{showlabels}
+
+% set toc depth
+\usepackage{tocvsec2}
+
+% \usepackage{geometry}
+
+% footnoes in table
+\usepackage{tablefootnote}
+
+
+
+%%% Local Variables: 
+%%% mode: plain-tex
+%%% TeX-master: "../main"
+%%% End: 

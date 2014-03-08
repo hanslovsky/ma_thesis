@@ -1,0 +1,33 @@
+\begin{scope}
+    \node (t2) {\huge $t$};
+    \node[hypotheses_one_object, below=of t2.north, circle, draw,yshift=10mm] (x21) {$X_i^{t}$};
+    \node[hypotheses_one_object, below=of t2.north, circle, draw,yshift=-21mm] (x22) {$X_h^{t}$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t2, xshift=-10mm] (t1) {\huge $t+1$};
+    \node[hypotheses_two_objects, below=of t1.north, circle, draw,yshift=-2mm] (x11) {$X_i^{t+1}$};
+\end{scope}
+
+\begin{scope}[on background layer]
+    \node[hypothesesdetection, below=of t1.north, circle, draw,yshift=10mm] (x12) {$X_j^{t+1}$};
+    \node[hypothesesdetection, below=of t1.north, circle, draw,yshift=-21mm] (x13) {$X_h^{t+1}$};
+\end{scope}
+
+
+
+\path[hypothesestransition] (x11) edge (x21);
+\path[hypothesestransition] (x11) edge (x22);
+
+\begin{scope}[on background layer]
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x12) (x13), inner sep=4mm] (b1) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x21) (x22), inner sep=4mm] (b2) {};
+\end{scope}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

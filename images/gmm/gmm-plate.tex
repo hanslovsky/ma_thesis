@@ -1,0 +1,18 @@
+\begin{tikzpicture}[baseline=0pt]
+    \begin{scope}
+        \node[main, label=below:$v$, fill=black!30] (v) {};
+        \node[main, label=below:$h$, left of=v, xshift=-10] (h) {};
+        \node[main, fill=black!30, below of=v, color=black!0] (v2) {};
+        \node[rectangle, inner sep=5mm,draw=black!100, fit= (v)] (r) {};
+        \node[anchor=south east,inner sep=1pt] at (r.south east) {$3$};
+        \path (h) edge[connect] (v);
+        %%%% DIRTY HACK TO ALLOW FOR CAPTIONS BEING ON THE SAME HEIGHT!!
+        %%%% MAYBE RECONSIDER!!
+        \node[main, label=below:{\color{white} 1}, color=black!0, fill=black!0, below of=v] (v2) {};
+    \end{scope}
+\end{tikzpicture}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

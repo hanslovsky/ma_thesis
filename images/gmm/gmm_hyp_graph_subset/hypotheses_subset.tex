@@ -1,0 +1,75 @@
+
+\begin{scope}
+    \node (t1) {\huge $t$};
+    \node[hypothesesdetection, below=of t1, circle, draw] (x11) {$X_2^t$};
+    \node[hypothesesdetection, below=of x11, circle, draw] (x12) {$X_3^t$};
+\end{scope}
+
+
+\begin{scope}
+    \node[right=of t1, xshift=15mm] (t2) {\huge $t+1$};
+    \node[hypotheses_new_detection, below=of t2, circle, draw] (x21) {$X_{14}^{t+1}$};
+    \node[hypotheses_new_detection, below=of x21, circle, draw] (x22) {$X_{15}^{t+1}$};
+    \node[hypothesesdetection, below=of x22, circle, draw] (x23) {$X_{7}^{t+1}$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t2, xshift=15mm] (t3) {\huge $t+2$};
+    \node[hypotheses_new_detection, below=of t3, circle, draw] (x31) {$X_{16}^{t+2}$};
+    \node[hypotheses_new_detection, below=of x31, circle, draw] (x32) {$X_{17}^{t+2}$};
+    \node[hypotheses_new_detection, below=of x32, circle, draw] (x33) {$X_{18}^{t+2}$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t3, xshift=15mm] (t4) {\huge $t+3$};
+    \node[hypothesesdetection, below=of t4, circle, draw] (x41) {$X_{11}^{t+3}$};
+    \node[hypothesesdetection, below=of x41, circle, draw] (x42) {$X_{12}^{t+3}$};
+    \node[hypothesesdetection, below=of x42, circle, draw] (x43) {$X_{13}^{t+3}$};
+\end{scope}
+
+\begin{scope}[on background layer]
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x11) (x12) (x13), inner sep=13mm] (b1) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x21) (x22) (x23), inner sep=13mm] (b2) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x31) (x32) (x33), inner sep=13mm] (b3) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x41) (x42) (x43), inner sep=13mm] (b4) {};
+\end{scope}
+
+\path[hypotheses_new_transition] (x11) edge (x21);
+\path[hypotheses_new_transition] (x11) edge (x22);
+
+
+\path[hypotheses_new_transition] (x12) edge (x21);
+\path[hypotheses_new_transition] (x12) edge (x22);
+
+\path[hypotheses_new_transition] (x21) edge (x31);
+\path[hypotheses_new_transition] (x21) edge (x32);
+\path[hypotheses_new_transition] (x21) edge (x33);
+
+\path[hypotheses_new_transition] (x22) edge (x31);
+\path[hypotheses_new_transition] (x22) edge (x32);
+\path[hypotheses_new_transition] (x22) edge (x33);
+
+\path[hypotheses_new_transition] (x23) edge (x31);
+\path[hypotheses_new_transition] (x23) edge (x32);
+\path[hypotheses_new_transition] (x23) edge (x33);
+
+\path[hypotheses_new_transition] (x31) edge (x41);
+\path[hypotheses_new_transition] (x31) edge (x42);
+\path[hypotheses_new_transition] (x31) edge (x43);
+
+\path[hypotheses_new_transition] (x32) edge (x41);
+\path[hypotheses_new_transition] (x32) edge (x42);
+\path[hypotheses_new_transition] (x32) edge (x43);
+
+\path[hypotheses_new_transition] (x33) edge (x41);
+\path[hypotheses_new_transition] (x33) edge (x42);
+\path[hypotheses_new_transition] (x33) edge (x43);
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

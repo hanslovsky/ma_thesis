@@ -1,0 +1,105 @@
+\subsection{Factor Graphs}
+\label{subsec:factor-graphs}
+Finally, to conclude the digression on graphical models, this section introduces factor graphs.
+
+\begin{mydef}[{\citealp{kschischang_01_factor,frey_98_factor}}]
+    \label{def:factor-graph}
+    A \emph{factor graph} is an undirected bipartite graph $G=(\{\mathcal{U},\mathcal{V}\},
+    \mathcal{E})$, \ie the set of vertices is formed by two disjoint sets $\mathcal{U}$ and
+    $\mathcal{V}$ with $\mathcal{U} \cap \mathcal{V} = \emptyset$, such that there is no edge
+    between two vertices from the same set $\mathcal{U}$ or $\mathcal{V}$:
+\begin{align}
+    \label{eq:bipartite}
+    \nexists (U_1 \undirected U_2) \in \mathcal{E} \; \forall \; U_1, U_2 \in
+    \mathcal{U} \wedge \nexists (V_1 \undirected V_2) \in \mathcal{E} \; \forall \; V_1, V_2 \in
+    \mathcal{V}
+\end{align}
+It represents a probability distribution over random variables $\mathcal{X} = \{X_V : V \in \mathcal{V}\}$
+\begin{align}
+    \label{eq:fg-distribution}
+    P(\mathcal{X}) = \frac{1}{Z}\prod_{U \in \mathcal{U}}\psi_U(\mathcal{X}_U),
+\end{align}
+with the vertices $\mathcal{U}$ and $\mathcal{V}$ indexing the non-negative \emph{potentials} or
+\emph{factors} $\psi_\mathcal{U} = \{\psi_U : U \in \mathcal{U}\}$ and the random variables
+respectively. Here, $\psi_U$ is a function of the set of random variables
+$\mathcal{X}_U$. Furthermore, the set of edges $\mathcal{E}$ is defined such that the vertex $U$
+representing a potential $\psi_U$ is connected to the vertices $\mathcal{V}_{\mathcal{X_U}}$ of all
+of the potential's arguments $\mathcal{X}_U$:
+\begin{align}
+    \label{eq:fg-edges}
+    \mathcal{E}_U &= \left\{(U \undirected V ) : V \in {V}_{\mathcal{X_U}}\right\}\\
+    \mathcal{E} &= \left\{\mathcal{E}_U : U \in \mathcal{U}\right\}
+\end{align}
+\end{mydef}
+
+With \cref{def:factor-graph}, it becomes clear, that the structure of a factor graph reflects the
+factorization of a distribution into potentials. In general, the following conventions are agreed
+upon for the illustrations of factor graphs:
+\begin{enumerate}
+      \item Random variable nodes $\mathcal{V}$ are typically denoted by circles.
+      \item Factor nodes $\mathcal{U}$ are typically denoted by filled squares.
+\end{enumerate}
+In order to illustrate these conventions, \cref{fig:fg-simple} shows an example of a simple factor
+graph with the probability distribution
+\begin{align}
+    \label{eq:fg-simple}
+    P(x_1,x_2,x_3,x_4,x_5) = \frac{1}{Z}\psi_1(x_1,x_2,x_3)\psi_2(x_1,x_4)\psi_3(x_5).
+\end{align}
+Moreover, factor graphs implement dependencies and interactions of random variables in a very
+intuitive manner in terms of factors. In addition, a range of inference algorithms is applicable to
+factor graphs, \eg (loopy) \emph{belief propagation}~(\citealp{pearl_82_reverend};
+\citealp[Chapter~5.1.3,Chapter~28.7]{barber_12_bayesian}), \emph{belief revision}
+(\citealp{darwiche_96_logic}, \citealp[Chapter~5.2.1]{barber_12_bayesian}), and both
+Bayesian networks and Markov networks can be transformed into extended factor graphs without loss of
+expressiveness (\citealp[Section~2]{frey_03_extending}). In the case of Markov networks, factors
+represent cliques in the original graph. However, multiple factors can be merged into a single
+factor and then the direct mapping from cliques to factors does not hold anymore. This makes the
+factor graph a powerful tool both for modeling and inference.
+
+Furthermore, the probability distribution of a factor graph can be interpreted as a Gibbs
+distribution
+\begin{align}
+    \label{fg-gibbs}
+    P(\mathcal{X}) = \frac{1}{Z}e^{-E(\mathcal{X})}
+\end{align}
+with
+\begin{align}
+    E(\mathcal{X}) = -\log\left(\prod_{U \in \mathcal{U}}\psi_U(\mathcal{X}_U)\right) = -\sum_{U \in \mathcal{U}}\log\left(\psi_U(\mathcal{X}_U)\right).
+\end{align}
+Then, the MAP solution
+\begin{align}
+    \label{fg-map}
+    \argmax_{\mathcal{X}}P(\mathcal{X}) = \argmin_{\mathcal{X}}E(\mathcal{X})
+\end{align}
+can be calculated using \emph{linear programming}~(LP, \cref{cha:app-ilp}) or \emph{integer linear
+    programming}~(ILP, \cref{cha:app-ilp}) for discrete random
+variables. In the following, we make use of this transformation to exploit the advantage that,
+instead of using zero probability (infinite energy) to forbid certain configurations, we can
+directly exclude these configurations from the feasible regions by the means of linear constraints
+(also hard constraints).
+% can be calculated using integer linear programming (ILP,
+% \citet{vanderbei_07_linear}{Chapter~22}). Throughout this thesis, all presented
+% tracking approaches  
+
+
+
+
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[thick, on grid, every node/.style={font=\small, scale=1.5}]
+        \input{images/tikz/factor-graph/simple-fg.tex}
+    \end{tikzpicture}
+    %\rule{\textwidth}{0.3pt}
+    \caption[Example of a simple factor graph]{Example of a simple factor graph containing five
+        random variables (circles with beige fill) and three factors (black squares).}
+    \label{fig:fg-simple}
+\end{figure}
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

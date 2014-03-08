@@ -1,0 +1,27 @@
+\section{Graphical Models}
+\label{sec:gm-graphical-models}
+
+A graphical representation of probability distributions is helpful for modeling
+independence/dependence relationships. Graphical models impose structure that reflects those
+relations. However, the capabilities of graphical models is limited and any use case requires the
+choice of an appropriate kind of graphical model \citep[57]{barber_12_bayesian}. Of
+the many types of graphical models we present Bayesian networks (\cref{subsec:gm-bayesian-net}),
+conditional random fields (\cref{subsec:gm-crf}) and factor graphs
+(\cref{subsec:factor-graphs}). Both the Bayesian networks and the conditional random fields can be
+transformed into a factor graph representation, which is commonly used for inference. Moreover, as
+shown in \cref{subsec:fg-conservation} and \cref{cha:joint}, a factor graph can also be utilized for
+modeling.
+
+\input{content/graphical_models_and_tracking/bayesian_networks}
+\input{content/graphical_models_and_tracking/conditional_random_fields}
+\input{content/graphical_models_and_tracking/factor_graphs}
+
+We introduced three probabilistic graphical models, namely Bayesian networks, conditional random
+fields and factor graphs. In the following, \cref{cha:gm-in-tracking} shows two examples for
+graphical model based tracking-by-assignment methods, \emph{chain graph} tracking in
+\cref{subsec:fg-chaingraph} and \emph{conservation} tracking in \cref{subsec:fg-conservation}.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

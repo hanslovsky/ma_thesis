@@ -1,0 +1,18 @@
+\begin{scope}
+    \node[RVnode] (v) {$y_1$};
+    \node[RVnode, above=of v.north] (v1) {$y_2$};
+    \node[RVnode, xshift=-40, fill=black!30] at ($(v)!0!(v1)$) (h) {$x_1$};
+    \node[RVnode, xshift=-40, fill=black!30] at ($(v)!1!(v1)$) (h1) {$x_2$};
+    \node[Factor, label={[font=\tiny, xshift=7, yshift=-7]below:$\psi_1(x_1,y_1)$}] (f1) at ($(v)!0.5!(h)$) {};
+    \node[Factor, label={[font=\tiny, xshift=7, yshift=7]above:$\psi_2(x_2,y_2)$}] (f2) at ($(v1)!0.5!(h1)$) {};
+    \node[Factor, label={[font=\tiny]right:$\psi_3(x_1, x_2)$}] at ($(v)!0.5!(v1)$) (f3) {};
+    \factoredge {v, h} {f1} {};
+    \factoredge {v1, h1} {f2} {};
+    \factoredge {v1, v} {f3} {};
+
+\end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

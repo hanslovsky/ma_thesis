@@ -1,0 +1,24 @@
+{% \scalefont{0.5}
+    \node[RVnode] (rv1) {$x_1$};
+    \node[RVnode, above right=of rv1.north east, yshift=10] (rv2) {$x_2$};
+    \node[RVnode, above left=of rv1.north west, yshift=10] (rv3) {$x_3$};
+    \node[RVnode, below=of rv1.south] (rv4) {$x_4$};
+    \node[RVnode, right=of rv2.east, xshift=20] (rv5) {$x_5$};
+    \node[Factor, label={[font=\tiny]left:$\psi_2(x_1,x_4)$}] (f1) at ($(rv1)!0.5!(rv4)$) {};
+    \node[Factor, label={[font=\tiny]below right:$\psi_1(x_1,x_2,x_3)$}] (f2) at ($(rv2)!0.5!(rv3)!0.3!(rv1)$) {};
+    \node[Factor, below=of rv5.south, label={[font=\tiny]right:$\psi_3(x_5)$}] (f3) {};
+    \factoredge {rv1, rv4} {f1} {};
+    \factoredge {rv1, rv2, rv3} {f2} {};
+    \factoredge {rv5} {f3} {};
+    % \path[draw, very thick] (rv1) edge (f1);
+    % \path[draw, very thick] (rv1) edge (f2);
+    % \path[draw, very thick] (rv2) edge (f2);
+    % \path[draw, very thick] (rv3) edge (f2);
+    % \path[draw, very thick] (rv4) edge (f1);
+    % \path[draw, very thick] (rv5) edge (f3);
+}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

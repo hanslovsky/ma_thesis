@@ -1,0 +1,46 @@
+% \begin{tikzpicture}
+% \tikzstyle{main}=[circle, minimum size = 10mm, thick, draw =black!80, node distance = 16mm]
+% \tikzstyle{hyparam}=[rectangle, minimum size = 5mm, thick, draw =black!80, fill = black!10, node distance = 16mm]
+% \tikzstyle{param}=[rectangle, minimum size = 5mm, thick, draw =black!80, node distance = 16mm]
+% \tikzstyle{connect}=[-latex, thick]
+% \tikzstyle{selector}=[-latex, -|, snake=snake,segment amplitude=.4mm,segment length=2mm,line after snake=1mm, thick]
+% \tikzstyle{shortconnect}=[-latex, thin]
+% \tikzstyle{box}=[rectangle, draw=black!100]
+% \tikzstyle{switch}=[circle, minimum size = 1mm, fill = black!100, draw=black!100]
+%   \node[param] (phi) [label=below:$p(h)$] {$[H]$};
+%   \node[main] (z) [right of=phi,label=below:$h^n$] {K};
+%   \node[param] (mu) [above of=phi,yshift=10mm, label=below:$\MUH$] { };
+%   \node[main, fill = black!10] (x) [right of= z,label=below:$v^n$] { };
+%   \node[param] (sigma) [above of=z,yshift=10mm, label=right:$\SIGMAH$] { };
+%   \path (phi) edge [connect] (z)
+%         (z) edge [selector] (x)
+%         (mu) edge [connect] (x)
+%         (sigma) edge [connect] (x);
+%   \node[rectangle, inner sep=0mm, fit= (z) (x),label=below right:$N$, xshift=9mm] {};
+%   \node[rectangle, inner sep=4.4mm,draw=black!100, fit= (z) (x), xshift=1mm] {};
+%   \node[rectangle, inner sep=2mm, fit= (mu) (sigma),label=below right:$H$, yshift=-2mm, xshift=11mm] {};
+%   \node[rectangle, inner sep=6.4mm,draw=black!100, fit= (mu) (sigma), yshift=-2mm, xshift=3mm] {};
+% \end{tikzpicture}
+
+\begin{tikzpicture}
+  \node[param] (pi) [] {$\Pi$};
+  \node[main] (z) [right of=pi,label=below:$h^n$] { };
+  \node[param] (mu) [above of=pi,yshift=10mm, label=below:$\MUH$] { };
+  \node[main, fill = black!30] (x) [right of= z,label=below:$v^n$] { };
+  \node[param] (sigma) [above of=z,yshift=10mm, label=right:$\SIGMAH$] { };
+  \path (pi) edge [connect] (z)
+        (z) edge [connect] (x)
+        (mu) edge [connect] (x)
+        (sigma) edge [connect] (x);
+  \node[rectangle, inner sep=0mm, fit= (z) (x),label=below right:N, xshift=9mm] {};
+  \node[rectangle, inner sep=4.4mm,draw=black!100, fit= (z) (x), xshift=1mm] {};
+  \node[rectangle, inner sep=2mm, fit= (mu) (sigma),label=below right:H, yshift=-2mm, xshift=11mm] {};
+  \node[rectangle, inner sep=6.4mm,draw=black!100, fit= (mu) (sigma), yshift=-2mm, xshift=3mm] {};
+\end{tikzpicture}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

@@ -1,0 +1,16 @@
+\begin{scope}
+    \node[RVnode] (v) {$X_1$};
+    \node[RVnode, above=of v.north] (v1) {$X_2$};
+    \node[RVnode, xshift=-40] at ($(v)!0.5!(v1)$) (h) {$X_3$};
+    \node[Factor, label={[font=\tiny]below left:$\phi_1(x_1,x_3)$}] (f1) at ($(v)!0.5!(h)$) {};
+    \node[Factor, label={[font=\tiny]above left:$\phi_2(x_2,x_3)$}] (f2) at ($(v1)!0.5!(h)$) {};
+    \node[Factor, label={[font=\tiny]left:$\phi_3(x_1)$}, left=of h.west] (f3) {};
+    \factoredge {v, h} {f1} {};
+    \factoredge {v1, h} {f2} {};
+    \factoredge {h} {f3} {};
+\end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

@@ -1,0 +1,32 @@
+\begin{scope}[xshift=1.3*\shiftdistance]
+    \begin{scope}[yshift=\distancebetween,
+        every node/.append style={yslant=0.5,xslant=-1},
+        yslant=0.5,xslant=-1]
+        \node[inner sep=0, label={[xshift=5]above:{}}] (res1) {
+            \includegraphics[width=\scalingfactor\textwidth]{images/joint/pipeline/78_res_crop.png}
+        };
+    \end{scope}
+    \begin{scope}[every node/.append style={yslant=0.5,xslant=-1},yslant=0.5,xslant=-1]
+        \begin{pgfonlayer}{bglower}
+            \node[inner sep=0, label={[xshift=15]above:{}}] (res2) {
+                \includegraphics[width=\scalingfactor\textwidth]{images/joint/pipeline/79_res_crop.png}
+            };
+        \end{pgfonlayer}
+    \end{scope}
+    \coordinate (base1) at (res2.north west |- bglow.south west);
+    \coordinate (base2) at (res2.south east |- bglow.south west);
+    % \draw (base1) rectangle[pllbltxt, yshift=-10] (base2);%  {Tracking Result};
+    \path let \p1 = (base1.west), \p2 = (base2.east) in
+    node[pllbltxt, minimum width=\x2-\x1]  (labelres) at ($(base1)!0.5!(base2)$) {Tracking Result};
+    \begin{pgfonlayer}{bglower}
+        \path[threed] (res2.south east) -- (res1.south east);
+        \path[threed] (res2.north east) -- (res1.north east);
+        \path[threed] (res2.south west) -- (res1.south west);
+        \path[threed] (res2.north west) -- (res1.north west);
+    \end{pgfonlayer}
+\end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

@@ -1,0 +1,17 @@
+\begin{tikzpicture}[baseline=0pt]
+    \begin{scope}
+        \node[main, label=below:$v_1$, fill=black!30] (v) {};
+        \node[main, label=below:$v_2$, fill=black!30, above of=v] (v1) {};
+        \node[main, label=below:$v_3$, fill=black!30, below of=v] (v2) {};
+        \node[main, label=below:$h$, left of=v, xshift=-10] (h) {};
+        \path (h) edge[connect] (v);
+        \path (h) edge[connect] (v1);
+        \path (h) edge[connect] (v2);
+    \end{scope}
+\end{tikzpicture}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

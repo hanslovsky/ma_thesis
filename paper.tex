@@ -1,0 +1,902 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage{cvpr}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath, mathtools}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{amsfonts} 
+\usepackage{multirow}
+\usepackage{dsfont} % doublestroke, e.g. \mathds{1}
+
+% \linespread{2}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+% Include other packages here, before hyperref.
+
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+\usepackage[pagebackref=true,breaklinks=true,letterpaper=true,colorlinks,bookmarks=false]{hyperref}
+
+% \cvprfinalcopy % *** Uncomment this line for the final submission
+
+\def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
+\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
+
+% Pages are numbered in submission mode, and unnumbered in camera-ready
+\ifcvprfinal\pagestyle{empty}\fi
+
+\newcommand{\red}{\color{red}}
+% use /eg and /ie for e.g. and i.e.
+
+% regular itemize symbols can be confused with \bullet
+\renewcommand{\labelitemi}{$-$}
+
+\begin{document}
+
+%%%%%%%%% TITLE
+\title{Joint Segmentation and Tracking for Multiple (Dividing) Cells}
+
+\author{Philipp Hanslovsky\\
+Institution1\\
+Institution1 address\\
+{\tt\small firstauthor@i1.org}
+% For a paper whose authors are all at the same institution,
+% omit the following lines up until the closing ``}''.
+% Additional authors and addresses can be added with ``\and'',
+% just like the second author.
+% To save space, use either the email address or home page, not both
+\and
+Martin Schiegg\\
+Institution2\\
+First line of institution2 address\\
+{\tt\small secondauthor@i2.org}
+\and 
+Christoph Klein ??? (or into Acknowledgements)
+\and
+Lars Hufnagel
+\and
+Fred A. Hamprecht
+}
+
+\maketitle
+%\thispagestyle{empty}
+
+%%%%%%%%% ABSTRACT
+\begin{abstract}
+   As in every two-stage approach, tracking-by-assignment methods suffer from errors propagated from the first stage
+   to the second stage, \ie from segmentation to tracking. Whereas space-time segmentation or state-space approaches
+   approaches naturally handle the \emph{joint} segmentation and tracking, 
+   tracking-by-assignment models have proven high flexibility when it comes to the tracking of \emph{dividing}
+   objects like cells. Therefore, we propose to model segmentation and tracking in one holistic framework for
+   the two stages to maximally benefit from each other. Our probabilistic graphical model both automatically selects
+   the best segments from a time-series of oversegmented images/volumes and links them across time steps. This is realized
+   by introducing intra-frame and inter-frame constraints between conflicting segmentation and tracking hypotheses while
+   at the same time allowing
+   for object division.
+   We show the efficiency of our algorithm on challenging 2D+t and 3D+t cell tracking datasets in dense cell populations
+   where cells overlap frequently.
+\end{abstract}
+
+%%%%%%%%% BODY TEXT
+\section{Introduction}
+\label{sec:introduction}
+
+\begin{figure}[t]
+\begin{center}
+   \includegraphics[width=\linewidth]{./fig/overview_draft.png}
+\end{center}
+   \caption{An excerpt of three consecutive time steps of dataset A are shown. The raw data (top row) 
+is oversegmented into superpixels (middle row) using a watershed algorithm. Our probabilistic graphical model then 
+tracks the cells over time and assigns each segment to a track or background. Note that one cell may be represented by
+multiple superpixels. This is realized by introducing inter-frame hypotheses and intra-frame conflict constraints between regions.
+}
+\label{fig:overview}
+\end{figure}
+
+
+%Tracking divisible objects finds application in various fields, such as life science[reference] or
+%the car industry[reference]. It is a challenging task as objects can divide at any time and thus the %
+%number of targets is unknown for each timestep.
+Novel microscopy techniques, e.g. digital scanned laser light sheet fluorescence 
+microscopy~\cite{krzic_12_multiview,tomer_12_quantitative}
+allow to record \emph{in vivo} multi-dimensional images in high spatial and temporal resolution. 
+Naturally, a great demand in developmental biology emerges for robust and accurate cell tracking algorithms to make
+the digitization of embryogenesis and by association their computational analysis possible.
+% Creating cell tracks (cell lineages) from embryogenesis time-series is important for making
+% quantitative analysis of embryonic development viable. 
+Most cell tracking approaches, however, 
+%especially tracking-by-assignment frameworks, 
+separate the cell detection stage from the cell tracking stage and hence, introduce errors propagated between those
+steps. In other words,
+the tracking result is naturally highly dependent on the detection quality and the result is thus deteriorated 
+by the errors resulting from the separation of detection and assignment.
+%propagated from the detection phase to the assignment phase and deteriorate the result. 
+Typically, two different kinds of segmentation errors are introduced by cell detectors on such challenging datasets:
+% often fail on such challenging datasets producing two different kind of undersegmentation:
+\begin{itemize}
+      \item Cells falsely ``merge'' due to occlusions in 2D or bad segmentation in 2D and 3D.
+      \item Foreground objects are labelled as background by the segmentation algorithm and hence, cell tracks
+are terminated due to entire missing cells in the segmentation.
+\end{itemize} 
+While the first issue has recently been addressed by existing
+methods~\cite{schiegg_13_conservation}, the latter still remains an unsolved problem in cell
+tracking. However, a solution to this problem can boost tracking results drastically: One single
+missing cell means losing all of its subsequent lineage which causes tedious proof-reading for
+developmental biologists. 
+%including correct information about tracking. 
+%Therein lies the motivation for introducing a new tracking method in
+%order to improve and replace existing ones.
+
+Our work aims at this particular problem by introducing a method for \emph{joint} segmentation and
+tracking. Instead of a rigid segmentation, the detection phase generates superpixels/-voxels (\emph{segments})
+%produces an oversegmentation from
+from which regions (possible cell segmentations)
+are extracted as sets of the original segments. 
+In particular, these regions can be understood as a
+selection of possible segmentation hypotheses. % that all make sense in the local context. 
+%During the assignment phase, 
+Global temporal information is exploited to select those hypotheses that best fit the overall
+tracking. %Only then the segmentation is completed. 
+During inference, each superpixel is assigned either a cell track identifier or the identifier of 
+the background (\emph{cf.} Fig.~\ref{fig:overview}). To put it another way, the outcome of our algorithm is both, a valid cell segmentation and 
+an assignment of each cell to its cell lineage.
+%all targets that are part of the tracking result
+%are part of the final segmentation. Anything that is not part of the tracking is interpreted as
+%background in the segmentation.
+
+%The ideal oversegmentation contains a segment for each pixel. However, in this case, region extraction and
+Ideally, to avoid \emph{any} segmentation error and fully exploit temporal context, one would
+choose to assign each single pixel to either a distinct cell or to background. 
+However, this problem space would be tremendous and
+joint segmentation and tracking computationally infeasible. Therefore, it is
+neccessary to create a superpixel-based oversegmentation. 
+In this paper, superpixels are referred to
+as \emph{segments}. %Segments that have a common border are called neighbors. 
+We denote by a \emph{region} 
+any kind of valid
+segmentation hypothesis, \ie %all segments as well as 
+clusters of neighboring segments including superpixels themselves.
+%, is called \emph{region}. 
+However, conflicting regions, \ie regions that overlap in space, 
+%may not be part of the same tracking result. 
+may not be active at the same time. Conflicting regions are included in the same 
+%Moreover, we denote by a 
+\emph{connected component} which denotes isolated neighbors in the region adjacency
+graph of superpixels. 
+%In other words, 
+%for the segments. Therefore, conflicting regions must be part of the same connected
+%component.
+% See Sec.~\ref{sec:oversegmentation_cells} for a detailed description of the generation of
+% the oversegmentation and regions.
+
+Our main contribution is the formulation of a probabilistic graphical model for 
+\emph{joint} segmentation and tracking for divisible and almost indistinguishable tracking targets 
+in terms of cells.
+%as a probabilistic graphical model. %in terms
+%of a factor graph and the application to cell tracking, which is especially challenging due to the
+This factor graph incorporates prior beliefs from multiple local classifiers and guarantees
+consistency in time and space.
+%divisibility and indistinguishability of the tracking targets. 
+To this end, and as a further contribution, we present a method to
+generate an oversegmentation which respects the borders between cells, even if they overlap and are merged to
+clusters in the raw data.
+The graphical model is translated to an integer linear program, the optimizer of which corresponds
+to the maximum a-posteriori (MAP) configuration of the segmentation and tracking problem.
+%The best tracking solution corresponds to the configuration with the maximum a-posteriori (MAP)
+%probability. The MAP solution is obtained using integer linear programming (ILP).
+
+%Fig.~\ref{fig:pipeline} gives an example of tracks where the proposed method does well while others
+%fail. Furthermore, it shows the nature(?) of the oversegmentation trying to mimic actual cells.
+
+Following an overview of related work in Sec.~\ref{sec:related_work}, we describe our main
+contribution - generation of oversegmentation and the factor graph - in Sec.~\ref{sec:method} on the 
+basis of a running example depicted in Fig.~\ref{fig:pipeline}. This
+is the essence of the proposed method %- which is also represented by the verbosity - 
+and contains a
+detailed formulation and justification of the factors and linear hard constraints neccessary to
+generate a meaningful tracking result. A presentation of experiments and results in
+Sec.~\ref{sec:experiments} will lead to our conclusion in Sec.~\ref{sec:conclusion}.
+
+% The formulation of the factor graph is described in Sec.~\ref{sec:method}
+
+% \begin{itemize}
+%  \item Motivation: Error propagation in two-step pipeline, ... (see Conservation Tracking Intro, but
+% this time, with a good ending :-) )
+%  \item avoid error-propagation (see introduction to Conservation Tracking and to Chapter 4 here)
+%  \item Joint pixelwise segmentation and tracking would be desired but is computationally not
+% feasible. Reduce the problem space of segmentation to selection from a limited number of segments
+% (oversegmentation).
+%  \item introduce the notation: \emph{segment}, \emph{region}, \emph{connected component}
+% \end{itemize}
+
+
+\begin{figure*}[t]
+\begin{center}
+\includegraphics[width=0.9\linewidth]{./fig/pipeline_draft.png}
+\end{center}
+   \caption{First, the raw data is oversegmented in all timesteps separately (stage II). Then, inter-timestep 
+transition hypotheses and intra-frame conflicts between overlapping regions are generated as indicated
+by green and red edges in stage III. From this structure, a probabilistic graphical model is constructed (stage IV)
+and inference is run on this factor graph. The resulting selection of active regions (actual cells) and their transitions between
+timesteps are marked in yellow and blue for two cells.
+ {\red TODO: number the steps as I, II, III, IV as referenced later}
+}
+\label{fig:pipeline}
+\end{figure*}
+
+
+\section{Related Work}
+\label{sec:related_work}
+
+\emph{Joint} object detection and tracking is handled naturally in tracking algorithms
+based on active contours~\cite{xiong_06_dynamical}, space-time segmentations~\cite{lezama_11_track}, or video segmentation of 
+multiple objects~\cite{vazquez_10_multiple,budvytis_11_semi}. However, they either cannot deal naturally with divisible objects and 
+heuristics must be used, or they cannot cope with dense object populations where objects may overlap, 
+as is the case for space-time segmentations, for instance.
+Furthermore, optical flow has been extended to jointly deal with segmentation and tracking~\cite{amat_13_fast}. 
+These authors propose to incorporate into an optical flow algorithm a regularization term based on 
+similarities of neighboring superpixels modeled in a Markov random field.
+
+In tracking-by-assignment models, however, \emph{joint} optimization of segmentation and tracking is only rarely tackled. 
+Instead, to reduce errors in the final results, errors are minimized in each step of the two-stage tracking-by-assignment separately,
+the segmentation step and the tracking step:
+For the first, specialized segmentation approaches for the detection of overlapping objects have been 
+developed~\cite{park_13_segmentation,arte_13_learning}. These approaches aim to find most accurate segmentations, however,
+they do not incorporate any time information.
+To reduce errors in the \emph{tracking step}, probabilistic tracking-by-assignment methods for dividing objects 
+have been proposed~\cite{kausler_12_discrete,bise_11_reliable}, which handle 
+detected objects as random variables to allow the tracking step to correct for false positive detections. This idea
+has recently been extended by Schiegg \etal~\cite{schiegg_13_conservation} to further correct for undersegmentation errors
+by introducing conservation constraints between time steps to guarantee for consistent number of objects contained in 
+each detected region. In a postprocessing step, they correct the original segmentations. Our idea goes one step further
+and aims to avoid segmentation errors already in the first place by \emph{jointly} optimizing segmentation (\ie selection 
+of foreground-superpixels) and tracking.
+
+Most similar to our porposed method are the models in~\cite{funke_12_efficient} and~\cite{hofmann_13_hypergraphs}.
+Funke~\etal~\cite{funke_12_efficient} propose an algorithm 
+%extending the model in~\cite{vazquez_11_segmentation}
+which segments an anisotropic 3D volume of branching neurons by generating
+segmentation hypotheses in 2D slices separately and posing constraints between overlapping segmentation hypotheses. 
+In contrast to our model, they do not model background for their specific use-case and hence, the model cannot be applied directly 
+to our application where it is important to infer both whether a segment should be activated as foreground and to which segments in the
+consecutive timesteps it should be linked. The authors in~\cite{hofmann_13_hypergraphs} propose a similar idea for 
+joint tracking and object reconstruction from multiple cameras. Both methods have in common that they 
+solve an integer linear program with a large set of hard constraints between superpixels within one (time/slice) instance and accross
+instances. We extend their ideas to joint \emph{segmentation} and \emph{tracking} of multiple \emph{dividing} objects with similar 
+appearance.
+
+The original idea to refine a segmentation by modeling the conflicts between multiple overlapping segmentation hypotheses
+was introduced by Brendel~\etal~\cite{brendel_10_segmentation} and Ion~\etal~\cite{ion_11_image}. Whereas the Brendel~\etal
+propose algorithms
+to efficiently find the best independent sets in a conflict graph, Ion~\etal present a complementary approach to
+search for maximum cliques in the graph of possible hypotheses (where contradicting tiles are not connected). Their ideas
+were extended to the temporal domain in~\cite{brendel_11_multiobject}, but they cannot deal with dividing objects.
+
+
+% develop a tracking-by-detection algorithm which segments an anisotropic
+% 3D volume of branching neurons by generating segmentation hypotheses in 2D slices separately. By imposing constraints between
+% these segmentation hypotheses within one 2D slice and across the slices, the best hypotheses are selected in a MAP
+% inference problem by solving an integer linear program. Note that this approach can already cope for object divisions (neuron
+% branching), but...... 
+% Furthermore, in this specific use case, the model does not have to deal with false positive detections,
+% since they do not model background. \cite{vazquez_11_segmentation} is similar, but they fuse superpixels rather than
+% dealing with overlapping hypotheses.
+
+% When it comes to the tracking of an \emph{unknown} number of \emph{divisable} objects, 
+% tracking-by-assignment approaches prove to be 
+% most flexible to model domain-specific knowledge: 
+
+% Zhang \etal~\cite{zhang_08_global} introduce a network flow formulation for the tracking of multiple targets 
+% with global optimization. However, by allowing object divisions, this approach cannot be followed and
+% there exists no network flow formulation with exact optimization in linear time.
+% Instead, the tracking-by-assignment problem is naturally modeled as a probabilistic graphical model
+% {\red TODO cite Funke, Kausler,...} or directly as an Integer linear program {\red cite Bise}.
+
+% A similar idea was recently presented for joint multi-view reconstruction and tracking. Similar to our setting,
+% Hofmann \etal~\cite{hofmann_13_hypergraphs} formulate a tracking graph and add both conflict constraints between detections
+% of multiple cameras within one frame and hypotheses of those potential regions accross time frames. The model
+% is formulated as a MAP inference problem and solved using integer linear programming.
+
+
+% Joint Segmentation and Classification~\cite{liu_13_joint}
+
+% Segmentaiton Maximal Cliques~\cite{ion_11_image}
+% \begin{itemize}
+%  \item complementary approach of \cite{brendel_10_segmentation}, search for maximum cliques in the graph with the
+% highest weight (contradicting tiles are not connected, so they don't appear together in a clique)
+%  \item introduce approximation methods to solve this task
+% \end{itemize}
+% 
+% Tracking MWIS~\cite{brendel_11_multiobject}
+% \begin{itemize}
+%  \item extends \cite{brendel_10_segmentation}
+%  \item joint segmentation and tracking as conflict graph for max. independent set assignmment edges as nodes in
+% a cofnlict graph
+% \end{itemize}
+% 
+% Segmentation MWIS~\cite{brendel_10_segmentation}
+% \begin{itemize}
+%  \item Conflict graph, find independent nodes
+% \end{itemize}
+
+% \begin{itemize}
+%  \item Papers to cite for tracking: Funke, Kausler
+%  \item Papers to cite for segmentation: Funke~\cite{funke_12_efficient}, Shai Avidan~\cite{vazquez-reina_10_multiple}, Segmentation MWIS~\cite{brendel_10_segmentation}, Tracking MWIS~\cite{brendel_11_multiobject}, Segmentaiton Maximal Cliques~\cite{ion_11_image}, Blackman multi hypotheses tracking~\cite{blackman_04_multiple}, Joint Segmentation and Classification~\cite{liu_13_joint}
+%  \item Papers to cite for joint tracking: Schiegg, Hofmann~\cite{hofmann_13_hypergraphs} 
+% \end{itemize}
+
+
+\section{Joint Segmentation and Tracking}
+\label{sec:method}
+
+The purpose of this work is to segment and track multiple \emph{dividing} cells in a 
+tracking-by-assignment framework, \ie in a two-step detection and tracking pipeline. 
+To avoid error-propagation from the segmentation to the tracking stage, we propose to
+\emph{jointly} segment and track the targets based on an oversegmentation. 
+We first describe %how to obtain a reasonably coarse (fine?) oversegmentation from
+our oversegmentation algorithm for
+volumes with overlapping cells before we outline the probabilistic graphical model for 
+the joint segmentation and tracking. 
+
+
+\subsection{Multi-Level Oversegmentation}
+\label{sec:oversegmentation}
+
+Before joint segmentation and tracking becomes computationally feasible, 
+the time-series of 2D/3D images/volumes need to be preprocessed
+to reduce the problem space (step (II) and (III) in Fig.~\ref{fig:pipeline}). 
+Here, the images are processed each independently which allows for
+paralellization of the oversegmentation algorithm. 
+In step (II), the purpose is to obtain an oversegmentation on every image 
+which is sufficiently fine but as coarse as possible.
+That is, we prefer single segments (superpixels) for (isolated) objects without
+ambiguities, whereas multiple (smaller) segments are desired in cases where objects overlap in space. 
+
+To this end, we propose the following oversegmentation algorithm:
+\begin{enumerate}
+ \item Obtain a coarse segmentation which only distinghuishes 
+potential foreground from certain background.
+ \item Automatically select seeds fulfilling the requirements outlined above.
+ \item Compute the seeded watershed on the foreground mask.
+ \item Merge resulting segments hierarchically to potential regions.
+\end{enumerate}
+
+Here, the first step may be performed by any segmentation algorithm which can be adjusted in a way that 
+only those pixels/voxels are predicted as background where we are most sure. This step's output
+is either a hard segmentation or a probability map of the foreground (soft segmentation). 
+Note that typically, it is not desirable to track the resulting connected components directly, since 
+large clusters of cells may be contained in each connected component. Hence, we continue by 
+refining these connected components to multiple segments.
+
+To this end, the watershed algorithm is applied to the mask of potential foreground (``\emph{foreground mask}'').
+The seeds for it are determined by the local maxima of the distance transform on the foreground mask
+to nearest background pixels/voxels. This gives rise to regularly shaped compact segments, potential cell segmentations. 
+A minimum
+size of these segments may be achieved by performing a dilation operation on the seeds with appropriate disc radius.
+Note that the watershed may either be applied to the \emph{soft} segmentation mask or the masked raw data directly.
+
+Finally, segments are merged to regions, possible competing cell segmentations (step (III) in Fig.~\ref{fig:pipeline}).  
+This merging can be performed in any order, but
+for simplicity, we choose a hierarchical region merging in a region adjacency graph using $L$ levels. 
+Its edge weights between neighboring segments/regions may be arbitrary complex and the regions may be merged 
+in an order determined by these edge weights.
+
+Since the (merged) regions will spatially overlap with their original segments, natural conflicts between 
+these regions exist and are incorporated into our graphical model (step (IV) in Fig.~\ref{fig:pipeline})
+as discussed in the next section.
+
+More details for a reasonably fine oversegmentation in our 
+cell tracking datasets are given in Sec.~\ref{sec:oversegmentation_cells}.
+
+
+\subsection{Graphical Model for Joint Segmentation and Tracking}
+\label{sec:joint}
+
+
+\begin{figure}[t]
+\begin{center}
+   \includegraphics[width=\linewidth]{./fig/factor_graph_draft.png}
+\end{center}
+   \caption{Close-up on stage IV from Fig.~\ref{fig:pipeline}. Left: oversegmentations of two connected components in
+two consecutive time steps $t$ and $t+1$. 
+In the proposed factor graph (right), 
+\emph{detection} random variables for possible cell segmentations (``regions'') 
+are shown in black whereas their allowed inter-timestep transitions
+are modeled by random variables depicted in blue.
+Green factors give a prior probability for each connected component how many cells it may contain, as
+predicted by a local \emph{cell count} classifier. 
+For instance, the cell count classifier for connected component $\{123\}$ may give high probability that it contains
+actually two cells.
+By introducing intra-timestep conflict hard constraints (red factors), it is guaranteed that 
+at most only one variable in each conflict set, e.g. $\mathcal C = \{ \{123\}, \{23\}, \{3\} \}$, may be active at a time.
+Outgoing and incoming factors, $\psi_\mathrm{out}$ and $\psi_\mathrm{in}$ connect inter-frame transition variables with
+detection variables and ensure that each cell has at most two descendants and one ancestor and additionally inject costs for disappearance
+and appearance, respectively.
+{\red TODO: use other color than green}}
+\label{fig:factor_graph}
+\end{figure}
+
+\paragraph{Overview} Based on the oversegmentation described in Sec.~\ref{sec:oversegmentation},
+% a meaningful tracking is generated. We 
+we introduce a factor graph~\cite{kschischang_01_factor} which models competing (intra-frame) relations between
+potential cell segmentations which overlap in space %from the same connected component
+as well as possible inter-frame hypotheses
+between regions of adjacent timesteps. Factors are introduced to encourage solutions from local classifiers
+and, at the same time, guarantee consistency due to
+%The factors represent prior belief in the correctness of the tracking. 
+%In addition, 
+linear constraints. That is, impossible configurations are disallowed, \eg a
+cell dividing into three daughters. Building the graphical model corresponds to step
+(IV) in Fig.~\ref{fig:pipeline} where the result after running inference on the proposed graphical
+model is marked. 
+%Inference will lead to the tracking result as shown in step (IV) (both referring to
+%Fig.~\ref{fig:pipeline}). 
+The construction of the factor graph and the meaning of contained factors and random variables are
+described in detail in this section. 
+We will refer to the toy example depicted in Fig.~\ref{fig:pipeline} as a running example.
+
+\paragraph{Random Variables} 
+%The factor graph models two types of binary random variables: 
+To build the factor graph for joint segmentation and trackings, we first introduce two types of binary
+random variables, \emph{detection} variables and \emph{transition} variables.
+%Firstly,
+In particular,
+each possible cell segmentation (region) 
+gets assigned a \emph{detection} variable $X_{i\alpha}^t \in \{0,1\}$, where $i$ is the
+connected component the region is contained in, $\alpha$ is the identifier of the region, and $t$ is the
+timestep. Secondly, variables $Y_{i\alpha,j\beta}^{t,t+1} \in \{0,1\}$ for each possible inter-frame transition 
+between two regions in adjacent timesteps are added.
+%tracking between two targets in adjacent timesteps. 
+%These random variables can be inerpreted as
+%intra-timestep and inter-timestep hypotheses, respectively. 
+In our illustrative example in Fig.~\ref{fig:pipeline}, %exemplary random variables are 
+one detection varialbe is $X_{\{45\}\{4\}}^{t+1}$, referring to region $4$ in the connected component formed by
+regions $4$ and $5$ at time $t+1$.
+$Y_{\{123\}\{23\},\{45\}\{4\}}^{t,t+1}$ is an exemplary inter-frame transition variable, where the indexes mean that 
+%An inter-frame , referring to the transition of
+region $23$ in connected component $123$ at time $t$ may be associated with region $4$ in connected component $45$ at time
+$t+1$.
+
+% Inter-frame hypotheses are extracted by a thresholded nearest neighbor search for connected components between
+% adjacent timesteps, both in forward and backward direction. Each region within a connected component
+% at time $t$ is paired with all regions in the neighboring connected components at time $t+1$. These
+% are the hypotheses that are represented by $Y_{i\alpha,j\beta}^{t,t+1}$  in the factor graph.
+
+\paragraph{Factors} We continue the construction of our graphical model by adding factors.
+Factors %in the factor graph relate the random variables to each other and
+may disallow specific configurations (see \emph{constraints}) and
+score possible configurations of their associated variables based on
+%, allowing for choosing the best feasible configuration during
+%inference. Each factor represents a potential whose value is determined by the states of the random
+%variables belonging to that factor. In order to weigh factors against each other, there is a design
+%parameter $w_{\text{class}}$ for each factor class. The 
+probabilities $\hat{P}$ that are here determined by
+probabilistic discriminative classifiers using local evidence $f_{i\alpha}^t$. 
+In the following, intra-frame factors (detection and count factor) 
+and inter-frame factors (outgoing and incoming factors) are described.
+For ease of notation, 
+the notation ``$\bullet$'' stands for all possible combinations of the according indices.
+$I_i^t$ denotes the set of indices $\{\alpha\}$ of all regions contained in connected component $i$
+at time $t$. $\mathcal{C}_{i\alpha}^t$ denotes the set of indices $\{\beta\}$ of all regions
+contained in the conflict set of inside connected component $i$ that conatins segment $\alpha$.
+$\mathcal{Y}_{\rightarrow j\beta}^{t,t+1}$ denotes the set of transition variables $\{Y^{t,t+1}\}$ that
+are connected to the incoming factor of detection variable $X_{i\alpha}^{t+1}$.
+$\mathcal{Y}_{i\alpha \rightarrow}^{t,t+1}$ denotes the set of transition variables $\{Y^{t,t+1}\}$ that
+are connected to the outgoing factor of detection variable $X_{i\alpha}^{t}$.
+
+% For each detection variable, a unary \emph{detection factor}
+% \begin{align}
+%     \label{eq:psi-det}
+%     \phi_{\text{det}}(X_{i\alpha}^t) & = E_{\text{det}}(X_{i\alpha}^t) \\
+%     E_{\text{det}}(X_{i\alpha}^t) & = -w_{\text{det}}\log\left(\hat{P}_\mathrm{det}\left(X_{i\alpha}^t = k|f_{i\alpha}^t\right)\right),\; k\in\{0,1\}
+% \nonumber
+% \end{align}
+% gives a prior probability that the associated region is a true segmentation of a cell. 
+
+For each conflict set, a higher order \emph{detection factor}
+\begin{align}
+    \label{eq:psi-det}
+    \mathcal{X}_i^t :&= \{X_{i\nu}^t\}_{\nu\in\mathcal{C}_{i\nu}^t} \\
+    \psi_{\text{det}}(\mathcal{X}_i^t) & =
+    E_{\text{det}}(\mathcal{X}_i^t) \\ \nonumber
+    E_{\text{det}}(\mathcal{X}_i^t) & = 
+    \begin{cases}
+        A(\mathcal{X}_i^t) &\text{if} \sum_{X \in \mathcal{X}_i^t} X = 1 \\
+        B(\mathcal{X}_i^t) &\text{if} \sum_{X \in \mathcal{X}_i^t} X = 0 \\
+        \infty &\text{otherwise}
+    \end{cases}
+    \\ \nonumber
+    A(\mathcal{X}_i^t) &=-w_{\text{det}} \sum_{X \in \mathcal{X}_i^t} \mathds{1} (X =
+    1)\log(\hat{P}(X=1)) \\ \nonumber
+    B(\mathcal{X}_i^t) &= -w_{\text{det}} \sum_{X \in \mathcal{X}_i^t} \log(\hat{P}(X = 0)) + w_{\text{opp}}
+\end{align}
+gives a prior probability that the associated region is a true segmentation of a cell.
+Here, $w_{\text{det}}$ weighs the detection
+factor against other factors. The probability $\hat{P}_\mathrm{det}\left(X_{i\alpha}^t = k|f_{i\alpha}^t\right)$
+with $f_{i\alpha}^t$ denoting local evidence is determined using a probabilistic discriminative
+classifier (see Sec.~\ref{sec:classifiers} for details). In Fig.~\ref{fig:pipeline}, 
+the potential $\psi_{\text det}$ ideally obtains a high value for the single region $2$ 
+%ces high output for regions $4$ and $5$ in Fig.~\ref{fig:pipeline} as they both do not represent a full cell
+while region $\{23\}$ ideally gets a low score since it better represents an entire cell.
+
+Moreover, to exploit further local evidence, a higher-order \emph{count factor}
+$\psi_{\text{count}}(\{X_{i\alpha}^t\}_{\alpha \in I_i^t})=$
+\begin{gather}
+    \label{eq:psi-count}
+      = -w_{\text{count}}\log\left(\hat{P}_{\text{count}}\left(\sum_{X \in \{X_{i\alpha}^t\}_{\alpha \in I_i^t}}X=k\right)\right),    
+\end{gather}
+injects prior beliefs for each connected component $i$ (comprising $N$ competing regions here) 
+to contain $k$ actual cells. 
+To this end, a probabilistic count classifier (see Sec.~\ref{sec:classifiers}) is trained and applied on 
+connected components.
+%connects all $N$ regions within the same connected component. The factor penalizes configurations where
+%the number of active targets differs from the classifier's suggestion. 
+For instance, 
+two active regions are favored for connected component $\{123\}$.
+%configurations or more than one active regions are penalized for connected component
+%$\{123\}$
+
+\renewcommand{\arraystretch}{1}
+\begin{table*}[!htbp]
+\small
+    \centering
+    \begin{tabularx}{\linewidth}{llXll}
+         & Constraint Name & Description & Linear Formulation &  ID\\\toprule[2pt]
+%\parbox[t]{2mm}{\multirow{1}{*}{\rotatebox[origin=c]{90}{\textbf{Intra-Frame}}}} &
+        \multicolumn{2}{l}{Intra-Frame Segmentation Conflicts}&
+        Conflicting (\ie overlapping) regions may not be active at the same time. &
+        $\sum_{\alpha \in\mathcal{C}}^tX_{i\alpha}^t \le 1\ \forall \mathcal{C} \in \{\mathcal{C}\}$ & $\mathfrak{C}_1$\\
+        \parbox[t]{2mm}{\multirow{6}{*}{\rotatebox[origin=c]{90}{Inter-Frame}}} 
+	& Couple-Detection-Outgoing &
+        Inter-frame hypotheses may not be active when the corresponding detection variable is inactive. &
+        $Y_{i\alpha,j\beta}^{t,t+1} \le X_{i\alpha}^t\  \forall j,\beta$ & $\mathfrak{C}_2$\\
+        & Descendants-Outgoing  &
+        A region may not have more than two descendants. &
+        $\sum_{j,\beta}Y_{i\alpha,j\beta}^{t,t+1} \le 2\ \forall j,\beta$ & $\mathfrak{C}_3$ \\
+        & Couple-Detection-Incoming&
+        Inter-frame hypotheses may not be active when the corresponding intra-frame hypotheses are inactive. &
+        $Y_{i\alpha,j\beta}^{t,t+1} \le X_{j\beta}^{t+1}\ \forall i,\alpha$ & $\mathfrak{C}_4$\\
+        & Ancestors-Incoming &
+        A region may not have more than one ancestor. &
+        $\sum_{i,\alpha}Y_{i\alpha,j\beta}^{t,t+1} \le 1 \ \forall i,\alpha$ & $\mathfrak{C}_5$\\ \bottomrule[1pt]    
+    \end{tabularx}
+    \caption{Linear constraints for random variables}
+    \label{tab:constraints}
+\end{table*}
+
+The factors above are both associated with variables from single timesteps only. To achieve temporal associations 
+of cells across timesteps, the model has to be extended by \emph{inter-frame factors} which 
+connect detection with transition variables. 
+%Furthermore, each detection variable is connected to all corresponding transition variables by the outgoing factor
+Firstly, \emph{outgoing factors} 
+% \begin{align}
+%     \label{eq:psi-out}
+% \psi_{\mathrm{out}}(X_{i\alpha}^t, &Y^{t,t+1}_{i\alpha ,j_1 \nu_1},...,Y^{t,t+1}_{i\alpha ,j_N \nu_M}) = E_{\text{dis}}(X_{i\alpha}^t, Y^{t,t+1}_{i\alpha ,\bullet})\nonumber \\\nonumber
+%     &+E_{\text{div}}(Y^{t,t+1}_{i\alpha , k_1 \mu_1}, Y^{t,t+1}_{i\alpha , k_2 \mu_2}) \\
+%     &+E_{\text{trans}}(Y^{t,t+1}_{i\alpha ,\bullet}).
+% \end{align}
+% {\red TODO: this should be a sum over all possible indexes, right? }
+\begin{align}
+    \label{eq:psi-out}
+    \psi_{\mathrm{out}}(X_{i\alpha}^t, \mathcal{Y}_{i\alpha\rightarrow}^{t,t+1})
+    &= E_{\text{dis}}(X_{i\alpha}^t, \mathcal{Y}_{i\alpha\rightarrow}^{t,t+1}) \\
+    &+ E_{\text{move}}(X_{i\alpha}^t, \mathcal{Y}_{i\alpha\rightarrow}^{t,t+1}) \\
+    &+ E_{\text{div}}(X_{i\alpha}^t, \mathcal{Y}_{i\alpha\rightarrow}^{t,t+1})
+\end{align}
+associate each variable $X_{i\alpha}^t$ with all possible transitions $ \mathcal{Y}_{i\alpha\rightarrow}^{t,t+1}$ to variables in the 
+successive timestep. This factor can be decomposed into three energy terms: \\ %, each representing a different event:
+\begin{enumerate}
+      \item Disappearance, \ie termination of a track, is penalized by the \emph{disappearance}
+    energy $E_{\mathrm{dis}}(X_{i\alpha}^t,  \mathcal{Y}_{i\alpha\rightarrow}^{t,t+1}) =$ 
+    \begin{align}
+        \label{eq:energy-dis}
+         =
+        \begin{cases}
+            w_{\mathrm{dis}}, &  X_{i\alpha}^t = 1 \wedge \sum_{Y\in\mathcal{Y}_{i\alpha\rightarrow}^{t,t+1}}Y = 0 \\
+            0, & \mathrm{otherwise}
+        \end{cases}.
+    \end{align}
+    % penalizes disappearance, \ie discontinuity of a track, with the weight
+    In other words, cost $w_{\mathrm{dis}}$ is charged when a detection variable is active, but all outgoing
+    transition variables are inactive. As there are cases when targets leave the field of view,
+    disappearances must be possible even though an appearance due to non-detection in the following
+    timestep is undesirable.
+      \item The division energy $E_{\mathrm{div}}(Y^{t,t+1}_{i\alpha , k_1 \mu_1}, Y^{t,t+1}_{i\alpha , k_2 \mu_2}) =$
+    \begin{align}
+        \label{eq:energy-div}
+        =-w_{\mathrm{div}} \cdot
+        \begin{cases}
+            \log \left(\hat{P}_{\mathrm{div}}\left(Y^{t,t+1}_{i\alpha , k_1 \mu_1} + Y^{t,t+1}_{i\alpha , k_2 \mu_2} = 2\right) \right)\\
+            \log \left(\hat{P}_{\mathrm{div}}\left(Y^{t,t+1}_{i\alpha , k_1 \mu_1} + Y^{t,t+1}_{i\alpha , k_2 \mu_2} < 2\right) \right)
+        \end{cases},
+    \end{align}
+    where the first case applies if region $i\alpha$ divides into regions $k_1\mu_1$ and $k_2\mu_2$, and the second if not.
+      \item The third component of the outgoing factor is the \emph{transition factor} {\red TODO}.
+\end{enumerate}
+
+The second inter-frame factor, the \emph{incoming factor}, ensures that each cell has at most one 
+descendant. It is defined by 
+$\psi_{\mathrm{in}}(X_{j\alpha}^{t+1}, Y^{t,t+1}_{i_1\nu_1 ,j \alpha},...,Y^{t,t+1}_{i_N\nu_M,j\alpha }) =$
+%$ \phi_{\text{in}}(X_{j\beta}^{t+1}, Y^{t,t+1}_{\bullet ,j\beta})=$
+\begin{align}
+    \label{eq:phi-in}
+    &= E_{\text{app}}(X_{j\beta}^{t+1}, Y^{t,t+1}_{i_1\nu_1 ,j \alpha},...,Y^{t,t+1}_{i_N\nu_M,j\alpha }) \nonumber \\
+    &= 
+    \begin{cases}
+        w_{\mathrm{app}}, & X_{j\beta}^{t+1} = 1 \wedge \sum_{k\nu}Y^{t,t+1}_{k\nu ,j\beta} = 0 \\
+        0, & \mathrm{otherwise}
+    \end{cases}    
+\end{align}
+and connects the detection variable at $t+1$ with all appropriate transition variables coming from the
+previous timestep $t$. 
+%Just like disappearances appearances are neccessary but unwanted.
+
+
+\paragraph{Linear Constraints} Many configurations are actually impossible in the cell tracking context. 
+For instance,
+a cell cannot have more than one ascendent or more than two descendants.
+% (it can either disappear, move or divide into two children targets). 
+Therefore, we add linear constraints to guarantee that only feasible configurations are part
+of any solution. Constraints %for detection variables 
+within individual timesteps are referred to as \emph{intra-frame} constraints
+while \emph{inter-frame} constraints regularize the interaction of detection with transition variables.
+The constraints are summarized in Tab.~\ref{tab:constraints} and explained in the following.
+
+Since overlapping -- and hence conflicting -- regions are contained in the segmentation hypotheses,
+%As the intra-frame hypotheses contain possibly conflicting regions, 
+hard constraints need to
+restrict the space of feasible solutions to non-contradicting solutions. For this purpose,
+conflicting hypotheses are subsumed into ``conflict sets'' $\mathcal C_i$ (maximal cliques
+in a conflict graph of the regions). In Fig.~\ref{fig:factor_graph}, the red factors and their 
+associated detection variables determine such conflict sets.
+%in conjunction with the red factors form this conflict graph. 
+Constraint $\mathfrak{C}_1$ in
+Tab.~\ref{tab:constraints} ensures that at most one detection variable is active in each
+conflict set. Taking conflict set $\mathcal{C} = \{ \{123\}, \{23\}, \{3\} \}$ in
+Fig.~\ref{fig:factor_graph} as an example, the constraint states:
+\begin{align}
+    X_{\{123\}\{3\}}^t+X_{\{123\}\{23\}}^t+X_{\{123\}\{123\}}^t \le 1
+\end{align}
+
+Those intra-frame constraints added, \emph{outgoing} and \emph{incoming} constraints model inter-frame interactions
+%other constraints are inter-frame constraints and can be grouped into ``outgoing'' constraints  that
+%couple detection variables and assignment variables pointing to the next timestep, and ``incoming''
+and couple detection variables with transition variables.
+%constraints that couple detection variables and assignment variables coming from the previous
+%timestep. In both cases there are constraints 
+These constraints ($\mathfrak{C}_2$ and $\mathfrak{C}_4$ in Tab.~\ref{tab:constraints})
+ensure compatibility of detection variables and assignment variables: No transition variable may be active
+if the corresponding detection variable has state zero. 
+In terms of the factor graph in
+Fig.~\ref{fig:factor_graph}, this means that, for instance,
+\begin{align}
+ Y_{\{123\}\{23\},\{5\}\{45\}}^{t,t+1} \leq X_{\{123\}\{23\}}^t.
+\end{align}
+
+% if $X_{\{123\}\{23\}}^t$ or $X_{\{5\}\{45\}}^{t+1}$ are
+%switched off, then $Y_{\{123\}\{23\},\{5\}\{45\}}^{t,t+1}$ must be switched off as well.
+
+In a simliar fashion, constraints $\mathfrak{C}_3$ and $\mathfrak{C}_5$ in Tab.~\ref{tab:constraints} enforce compliance
+with the tracking requirement that a cell can have at most two descendants and one ancestor, respectively.
+%  only disappear, move, or divide into at most two descendants,
+% and can have only zero or one predecessor, \ie merging of two or more cells into a single
+% cell is not allowed. Given that $X_{\{123\}\{23\}}^t$, $X_{\{45\}\{4\}}^{t+1}$ and
+% $X_{\{45\}\{5\}}^{t+1}$ are active in Fig.~\ref{fig:factor_graph}, the following transitions are possible:
+% \begin{itemize}%\itemsep2pt
+%       \item $Y_{\{123\}\{23\},{\{45\}\{4\}}}^{t,t+1}=0 \wedge Y_{\{123\}\{23\},{\{45\}\{5\}}}^{t,t+1}=0$: \\$\{23\}$ disappears, $\{4\}$ and $\{5\}$ appear
+%       \item $Y_{\{123\}\{23\},{\{45\}\{4\}}}^{t,t+1}=1 \wedge Y_{\{123\}\{23\},{\{45\}\{5\}}}^{t,t+1}=0$: \\$\{23\}$ moves to $\{4\}$, $\{5\}$ appears
+%       \item $Y_{\{123\}\{23\},{\{45\}\{4\}}}^{t,t+1}=0 \wedge Y_{\{123\}\{23\},{\{45\}\{5\}}}^{t,t+1}=1$: \\$\{23\}$ moves to $\{5\}$, $\{4\}$ appears
+%       \item $Y_{\{123\}\{23\},{\{45\}\{4\}}}^{t,t+1}=1 \wedge Y_{\{123\}\{23\},{\{45\}\{5\}}}^{t,t+1}=1$: \\$\{23\}$ divides to $\{4\}$, $\{5\}$ 
+% \end{itemize}
+
+A feasible tracking solution must fulfill all constraints $\mathfrak{C}_1$-$\mathfrak{C}_5$. 
+It should be noted that only $\mathfrak{C}_3$ needs to be adjusted appropriately if non-divisible objects 
+are to be tracked.
+% In the case of non-divisible
+% objects, C$_3$ needs to be reformulated to
+% \begin{align}
+%     \sum_{j,\beta}Y_{i\alpha,j\beta}^{t,t+1} \le 1 \forall j,\beta \nonumber
+% \end{align}
+
+% \renewcommand{\arraystretch}{3.5}
+% \begin{table*}
+%     \centering
+%     \begin{tabularx}{\linewidth}{llll}
+%         hard constraint & type  & linear formulation & \text{example} \\\toprule[3pt]
+%         conflict & intra-frame & $\sum_{X_{i\alpha}^t \in\mathcal{C}_{ij}}X_{i\alpha}^t \le 1$ &
+%         $\begin{aligned}
+%             \;\;\,X_{\{45\}\{45\}}^t+X_{\{45\}\{4\}}^t \le 1
+%         \end{aligned}$\\ \hline
+%         couple-detection-outgoing & inter-frame & $Y_{i\alpha,j\beta}^{t,t+1} \le X_{i\alpha}^t \forall j,\beta$ &
+%         $\begin{aligned}
+%             &Y_{\{123\}\{1\},\{45\}\{4\}}^{t,t+1} + Y_{\{123\}\{1\},\{45\}\{5\}}^{t,t+1} \\
+%             + &Y_{\{123\}\{1\},\{45\}\{45\}}^{t,t+1} \le X_{\{123\}\{1\}}^{t}
+%         \end{aligned}$ \\ \hline
+%         max-outgoing & inter-frame & $\sum_{i,\beta}Y_{i\alpha,j\beta}^{t,t+1} \le 2$ &
+%         $\begin{aligned}
+%             &Y_{\{123\}\{1\},\{45\}\{4\}}^{t,t+1} + Y_{\{123\}\{1\},\{45\}\{5\}}^{t,t+1} \\
+%             + &Y_{\{123\}\{1\},\{45\}\{45\}}^{t,t+1} \le 2
+%         \end{aligned}$ \\ \hline
+%         couple-detection-incoming & inter-frame & $Y_{i\alpha,j\beta}^{t,t+1} \le X_{j\beta}^{t+1} \forall i,\alpha$ &
+%         $\begin{aligned}
+%             \;\;\,Y_{\{i\alpha\}\{123\}\{123\}}^{t,t+1} \le X_{\{123\}\{123\}}^{t+1} \forall i,\alpha
+%         \end{aligned}$\\ \hline
+%         max-incoming & inter-frame  & $\sum_{i,\beta}Y_{i\alpha,j\beta}^{t,t+1} \le 1$ &
+%         $\begin{aligned}
+%             &Y_{\{123\}\{123\},\{45\}\{45\}}^{t,t+1} + Y_{\{123\}\{1\},\{45\}\{45\}}^{t,t+1} \\
+%             + &Y_{\{123\}\{2\},\{45\}\{45\}}^{t,t+1} + \dots \\
+%             \le &X_{\{45\}\{45\}}^{t+1}
+%         \end{aligned}$ \\\bottomrule[1pt]    
+%     \end{tabularx}
+%     \caption{Linear constraints for random variables}
+%     \label{tab:constraints}
+% \end{table*}
+
+
+% Regions that overlap contradict each other. For each connected component $i$ there are conflict sets
+% $\mathcal{C}_i^t$ that contain the maximal conflict cliques in the part of the region conflict graph
+% belonging to that connected component. Within these sets one region may be active at max:
+% \begin{align}
+%     \label{eq:constraint-conflict}
+%     \sum_{x \in \mathcal{X}}x &\le 1 \; \; \forall \mathcal{X} \in \mathcal{C}_i^t  \; \; \forall i, t
+% \end{align}
+% where $\mathcal{X}$ denotes a set of detection variables. The conflict sets of connected component
+% $\{123\}$ in Fig.~\ref{fig:pipeline} are $\{\{123,1\},\{123, 23, 2\},\{123,23,3\}\}$. The above
+% constraint forbids $\{123\}$ and $\{23\}$ to be active at the same time.
+
+% As a track cannot come out of nowhere, a transition variable cannot be active if at least one of the
+% according detection variables is inactive. The factor
+% \begin{align}
+%     \label{eq:constraint-active}
+%     Y^{t,t+1}_{i\alpha ,j\beta} \le \min(X^t_{i\alpha}, X^{t+1}_{j\beta}).
+% \end{align}
+% forces the transition variable to be zero if at least one of the detection variables is zero.
+
+% If divisible objects are allowed, each detection variable can be connected to two active transition
+% variables at max. Divisions with more than two children do not make sense in the cell tracking
+% context. If the targets are not divisible, then it must not be more than one active transition
+% variables for each detection variable:
+% \begin{align}
+%     \label{eq:constraint-out}
+%     \sum_{k,\nu}Y^{t,t+1}_{i\alpha ,k\nu} \le n \; \; \forall i,\alpha. \\
+%     n = \nonumber
+%     \begin{cases}
+%         2, & \text{divisions allowed} \\
+%         1, & \text{otherweise}
+%     \end{cases}
+% \end{align}
+
+% Similarly only one active incoming transition variable at max for each detection
+% variable is possible. Allowing more active incoming transtion variables does make sense when the
+% targets are mergeable which does not apply to cell tracking. Therefore
+% \begin{align}
+%     \label{eq:constraint-in}
+%     \sum_{k,\nu}Y^{t,t+1}_{k\nu ,j\beta} \le 1 \; \; \forall j,\beta.
+% \end{align}
+% guarantees only one incoming transition variable is active at max.
+
+% These linear constraints exclude all configurations that do not make sense in the tracking context.  
+
+
+\paragraph{Inference} In our global graphical model, the total energy {\red TODO: indexes!}
+\begin{align}
+    \label{eq:energy-total}
+    E(\mathcal{X}, \mathcal{Y}) &= \sum_{X_{i\alpha}^t \in \mathcal{X}} \phi_{\text{det}}(X_{i\alpha}^t) \\
+    &+ \sum_{X_{i\alpha}^t \in \mathcal{X}} \sum_{Y_{i\alpha ,\bullet}^{t,t+1} \in \mathcal{Y}} \psi_{\text{out}}(X_{i\alpha}^t, Y_{i\alpha ,\bullet}^{t,t+1}) \nonumber\\
+    &+ \sum_{X_{j\beta}^{t+1} \in \mathcal{X}} \sum_{Y_{\bullet, j\beta}^{t,t+1} \in \mathcal{Y}} \psi_{\text{out}}(X_{j\beta}^{t+1}, Y_{\bullet, j\beta}^{t,t+1}) \nonumber\\
+    &+ \sum_{X_{i\bullet}^t \in \mathcal{X}} \psi_{\text{count}}(X_{i\bullet}^t) \nonumber
+\end{align}
+is the sum of all factors over all possible variable configurations of detection variables $\mathcal{X}$ and transition variables $\mathcal{Y}$.
+It should be noted that $\mathcal{X}$ and $\mathcal Y$ contain \emph{all} random variables of \emph{all} time steps taking all information 
+available over time steps and over space into account in one holistic graphical model.
+%all detection and transaition variables respectively. Then the 
+The probability for a configuration $\mathcal{X}$, $\mathcal{Y}$ is then given by
+%\begin{align}
+%    \label{eq:factor-graph-probability}
+the Gibbs distribution
+$P(\mathcal{X},\mathcal{Y}) \propto e^{-E(\mathcal{X},\mathcal{Y})}$ and
+%\end{align}
+%with the partition function
+%\begin{align}
+%    \label{eq:factor-graph-partition}
+%    Z = \sum_{\mathcal{X} \in \{\mathcal{X}\}, \mathcal{Y} \in \{\mathcal{Y}\}}e^{-E(\mathcal{X}, \mathcal{Y})}
+%\end{align}
+%where $\{\mathcal{X}\}$ and $\{\mathcal{Y}\}$ describe the sets of all possible configurations of
+%the detection variables and transition variables.
+the optimal tracking corresponds to its MAP solution. To obtain an exact result, this objective 
+can be reformulated as a minimization of
+the energy defined in Eq.~\eqref{eq:energy-total} in terms of an integer linear program (ILP), namely
+\begin{align}
+    \label{eq:factor-graph-argmin}
+    \hat{\mathcal{X}},\hat{\mathcal{Y}} = \argmax_{\mathcal{X},\mathcal{Y}}P(\mathcal{X},\mathcal{Y}) = \argmin_{\mathcal{X},\mathcal{Y}}E(\mathcal{X},\mathcal{Y}).
+\end{align}
+subject to the linear constraints outlined above.
+%Note that, as the probability is a function of all random variables, minimzing the energy yields a
+%globally optimal solution.
+
+% As the factor graph contains binary variables and the total energy is a sum of functions that are
+% linear in those binary variables the energy minimization can be interpreted as an integer linear
+% program (ILP) that can be solved to global optimality. Furthermore, this allows for direct
+% implementation of the linear constraints. Even though solving an ILP is np-hard the problem is still
+% tractable for our experiment size.
+
+After inference, the optimal configuration of the factor graph can be interpreted as a segmentation and tracking
+result as illustrated in stage (IV) in Fig.~\ref{fig:pipeline}. The graphical models sets region values to zero which
+are inferred to be background and assigns a track identifier to each foreground superpixel.
+%s with detection variables set to zero
+% are determined to be false detections by the tracker. The tracker exploits global temporal context
+% to refine the original oversegmentation.
+
+
+\subsection{Local Classifiers}
+\label{sec:classifiers}
+
+{\red Martin;
+Maybe move this to supplementary. This section should contain and describe the features used for each of the four 
+classifier described above.}
+
+\section{Experiments}
+\label{sec:experiments}
+
+
+\subsection{Datasets}
+\label{sec:datasets}
+{\red 2d only or 3d as well?}
+
+\subsection{Multi-Level Oversegmentation for Overlapping Cells}
+\label{sec:oversegmentation_cells}
+
+In this cell tracking application, we use the following methods and parameters for the 
+hierarchical oversegmentation algorithm sketched in Sec.~\ref{sec:oversegmentation}. 
+
+To obtain a coarse foreground mask we use the segmentation toolkit ilastik~\ref{sommer_11_ilastik}: 
+Prediction maps for each timestep are computed independently using a pixel-wise random forest trained on 
+few training examples from the dataset. We use 100 trees in every experiment and select the following features
+at different scales: Gaussian smoothing, Laplacian of Gaussian, Gaussian Gradient Magnitude, Difference 
+of Gaussians, Structure Tensor Eigenvalues, Hessian of Gaussian Eigenvalues.
+
+The seeds are determined by the local maxima of the distance transform on the foreground mask 
+and are dilated with a disc of radius
+$r=3$ {\red TODO: confirm}. Resulting segments are merged hierarchically with edge weights based on 
+the ratio of the common border and the perimeter of the smaller region. It should be noted that 
+much more expressive weights may be used here but we find our edge weights performing already very well.
+Then, at every level $l\in \{0,...,L\}$ (we choose $L=5$ {\red TODO: confirm}), edge weights are ordered and the $p \%$ best neighbors
+are merged. Here, we set $p=20$ for $l \in \{0,...,L-1\}$ and $p=100$ for $l=L$ to get the connected components 
+of the foreground mask as the root node of the region conflict graph of this component.
+
+
+\subsection{Evaluation Measures}
+\label{sec:measures}
+
+{\red Philipp}
+
+\subsection{Results}
+\label{sec:results}
+
+\begin{figure*}[t]
+\begin{center}
+\includegraphics[width=0.9\linewidth]{./fig/results_draft.png}
+\end{center}
+   \caption{Experimental results on dataset A: Each row shows the same consecutive timesteps with our resulting cell 
+segmentation and tracking resulting from three different parameter settings. 
+Cell lineages/tracks are indicated by distinct colors, while cell daughters inherit their parent's color after mitosis.
+}
+\label{fig:results}
+\end{figure*}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+{\small
+\bibliographystyle{ieee}
+\bibliography{trackingbib}
+}
+
+\end{document}

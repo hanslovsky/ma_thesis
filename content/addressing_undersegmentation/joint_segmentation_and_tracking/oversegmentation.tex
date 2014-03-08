@@ -1,0 +1,150 @@
+\section{Oversegmentation}
+\label{sec:joint-oversegmentation}
+
+The oversegmentation in the joint tracking and segmentation model follows a three-step procedure:
+\begin{enumerate}
+    \item Obtain a partition into foreground and background such that as many cells as possible are
+  included -- not necessarily as single objects -- in the foreground~(\cref{subsec:joint-undersegmentation}).
+    \item Partition the foreground mask into segments with the aim of an oversegmentation of all
+  contained cells~(\cref{subsec:joint-oversegmentation}).
+    \item Form a richer set of segmentation hypotheses by gradually merging segments into larger
+  regions~(\cref{subsec:joint-region-merging}).
+\end{enumerate}
+In the following, we give a detailed description of our approach towards each of these tasks and the
+generation of the hypotheses graph. Note that, in general, it is possible to exchange our approach
+with a suitable replacement at any point of the three-step procedure.
+
+\subsection{Initial Partitioning}
+\label{subsec:joint-undersegmentation}
+In general, the initial partitioning of the data into foreground and background follows the
+procedure of the segmentation in the chain graph~(\cref{subsec:fg-chaingraph}) and
+conservation~(\cref{subsec:fg-conservation}) tracking methods. First, a random forest
+classifier~(\cref{cha:app-rf}) is trained on a small number of user annotated training samples using
+ILASTIK~\citep{sommer_11_ilastik}. Then, the classifier predicts \emph{probability maps} for the
+complete data set which can be transferred into a partitioning into foreground and background by
+thresholding on the foreground probability of each pixel.
+
+Contrary to the previous methods, chain graph and conservation tracking, the initial partitioning is
+only the basis for another segmentation and thus we do not aim for a segmentation that has a
+bijective mapping from cells in the raw data to foreground connected components. In fact, the
+foreground includes as many cells as possible, even if they are merged into large connected
+components.
+
+\subsection{Oversegmentation}
+\label{subsec:joint-oversegmentation}
+Now an oversegmentation of the foreground mask is generated. To this end, the watershed
+algorithm~\citep{vincent_91_watersheds,roerdink_00_watershed} is applied to the inverse of
+the distance transform~\citep[Section~18.4.4]{jaehne_05_digital} of the foreground regions with seeds
+at the local maxima of the distance transform, \ie the points on the foreground mask which are
+locally furthest away from any background region. This gives rise to regularly shaped compact
+segments, potential cell segmentations, which are the nodes of the initial region adjacency
+graph. For each pair of conterminous regions, an edge between the corresponding nodes is added to
+the graph.
+
+\subsection{Region Merging}
+\label{subsec:joint-region-merging}
+Starting from the initial region adjacency graph, regions are merged into a richer set of possibly
+competing cell segmentation hypotheses. For simplicity, we choose a hierarchical region merging with
+$L$ levels. However, any region merging algorithm is applicable. The weight $w$ of an edge $E$
+between two nodes $r_1$, $r_2$ in the region adjacency graph is a similarity measure for neighboring
+regions based on the joint border of the involved regions. At each level $1 \le l \le L$ all pairs of
+regions with similarity greater than a threshold $\tau$,
+\begin{align}
+    w(r_1, r_2) \ge \tau,
+\end{align}
+are merged into a new region. In the region adjacency graph, the two corresponding nodes are
+contracted.
+
+% \begin{figure}
+%     \centering
+%     \begin{subfigure}{0.48\textwidth}
+%         \centering
+%         \input{images/joint/overseg/weights_low.tex}
+%         \caption{Regions $1$ and $2$ are similar and therefore merging is preferable.}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}{0.48\textwidth}
+%         \centering
+%         \input{images/joint/overseg/weights_high.tex}
+%         \caption{The union of regions $3$ and $4$ is unlikely to be a cell. Therefore, the
+%             similarity is low.}
+%     \end{subfigure}
+%     \caption[Different edge weights]{Edge weights between different pairs of region indicated by the
+%     color of the circumscribing rectangle: green and red indicate high and low similarity respectively.}
+%     \label{fig:joint-overseg-edge-weight}
+% \end{figure}
+
+By construction, regions potentially contradict each other. These conflicts are graphically
+represented by the conflict graph $G_{\text{con}}$ with a node for each region and an edge for each
+pair of regions which share at least one common segment:
+\begin{align}
+    G_{\text{con}} &= (\mathcal{V}_{\text{con}}, \mathcal{E}_{\text{con}}), \\
+    \mathcal{E}_{\text{con}} &= \{V_1 \undirected V_2  : r_{V_1} \cap r_{V_2} \ne \emptyset\}.
+\end{align}
+
+\subsection{Hypotheses Graph}
+\label{subsec:joint-hypotheses-graph}
+In contrast to the chain graph method, the hypotheses graph of the joint segmentation and tracking
+does not contain single detection and transition hypotheses. In fact, each node represents a
+connected component and thus contains as many segmentation hypotheses as there are regions within
+that connected component. In a similar fashion, the edges represent all possible transitions between
+regions in the respective connected components.  Likewise to the chain graph hypotheses graph, edges
+between connected components are determined by a nearest neighbor search. In practice, however, a
+restriction on the number of possible transitions advisable in order to reduce the model size. To
+this end, assignment hypotheses are generated only between all regions in each conflict set in a
+connected component $c^t$ at time $t$ and all regions in the nearest neighbor conflict set for each
+connected component $c^{t+1}$ at time $t+1$ with an edge $c^t \undirected c^{t+1}$ in the hypotheses
+graph. In this context, the distance between two conflict sets is measured by the Euclidean distance
+between the two segments that define these conflict sets. As a result of this \emph{pruning},
+regions that are further up in the segmentation hierarchy have more potential assignments, with the
+outgoing assignments of a connected component being not affected by the pruning. Finally, a factor
+graph is constructed from the hypotheses graph.
+
+% Before joint segmentation and tracking becomes computationally feasible, 
+% the time-series of 2D/3D images/volumes need to be preprocessed
+% to reduce the problem space (step (II) and (III) in \cref{fig:pipeline}). 
+% Here, the images are processed each independently which allows for
+% paralellization of the oversegmentation algorithm. 
+% In step (II), the purpose is to obtain an oversegmentation on every image 
+% which is sufficiently fine but as coarse as possible.
+% That is, we prefer single segments (superpixels) for (isolated) objects without
+% ambiguities, whereas multiple (smaller) segments are desired in cases where objects overlap in space. 
+
+% To this end, we propose the following oversegmentation algorithm:
+% \begin{enumerate}
+%  \item Obtain a coarse segmentation which only distinghuishes 
+% potential foreground from certain background.
+%  \item Automatically select seeds fulfilling the requirements outlined above.
+%  \item Compute the seeded watershed on the foreground mask.
+%  \item Merge resulting segments hierarchically to potential regions.
+% \end{enumerate}
+
+% Here, the first step may be performed by any segmentation algorithm which can be adjusted in a way that 
+% only those pixels/voxels are predicted as background where we are most sure. This step's output
+% is either a hard segmentation or a probability map of the foreground (soft segmentation). 
+% Note that typically, it is not desirable to track the resulting connected components directly, since 
+% large clusters of cells may be contained in each connected component. Hence, we continue by 
+% refining these connected components to multiple segments.
+
+% To this end, the watershed algorithm is applied to the mask of potential foreground (``\emph{foreground mask}'').
+% The seeds for it are determined by the local maxima of the distance transform on the foreground mask
+% to nearest background pixels/voxels. This gives rise to regularly shaped compact segments, potential cell segmentations. 
+% A minimum
+% size of these segments may be achieved by performing a dilation operation on the seeds with appropriate disc radius.
+% Note that the watershed may either be applied to the \emph{soft} segmentation mask or the masked raw data directly.
+
+% Finally, segments are merged to regions, possible competing cell segmentations (step (III) in \cref{fig:pipeline}).  
+% This merging can be performed in any order, but
+% for simplicity, we choose a hierarchical region merging in a region adjacency graph using $L$ levels. 
+% Its edge weights between neighboring segments/regions may be arbitrary complex and the regions may be merged 
+% in an order determined by these edge weights.
+
+% Since the (merged) regions will spatially overlap with their original segments, natural conflicts between 
+% these regions exist and are incorporated into our graphical model (step (IV) in \cref{fig:pipeline})
+% as discussed in the next section.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

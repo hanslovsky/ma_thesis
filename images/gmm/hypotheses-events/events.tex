@@ -1,0 +1,31 @@
+\begin{tabularx}{\textwidth}{lXl}
+        \toprule
+        \multicolumn{3}{l}{Event}  \\ \midrule
+        Move & Cell $i$ at time $t$ is assigned to cell $j$ at time $t+1$. &
+        \tikz[baseline=(t1.south),minimum size=58pt,scale=0.35, every node/.style={scale=0.35,
+            text=black, font=\LARGE}, thick]{
+            \input{images/gmm/hypotheses-events/move.tex}
+        }\\
+        Division & Cell $i$ at time $t$ divides into cells $j$ and $h$ at time $t+1$. &
+        \tikz[baseline=(t1.south),minimum size=58pt,scale=0.35, every node/.style={scale=0.35,
+            text=black, font=\LARGE}, thick]{
+            \input{images/gmm/hypotheses-events/division.tex}
+        }\\
+        Merger & Connected component $i$ at time $t+1$ is identified to be a merger of size $k$. In the example in
+        the right column $k=2$.&
+        \tikz[baseline=(t1.south),minimum size=58pt,scale=0.35, every node/.style={scale=0.35,
+            text=black, font=\LARGE}, thick]{
+            \input{images/gmm/hypotheses-events/merger.tex}
+        }\\
+        Multiframe Move & Cell $i$ at time $t$ moves into a merged object at time $t+1$ and is
+        identified as a single cell $j$ at time $t^{\prime}>t+1$.  &
+        \tikz[baseline=(t1.south),minimum size=58pt,scale=0.35, every node/.style={scale=0.35,
+            text=black, font=\LARGE}, thick]{
+            \input{images/gmm/hypotheses-events/multiframe.tex}
+        }\\ \bottomrule
+    \end{tabularx}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

@@ -1,0 +1,51 @@
+\begin{tikzpicture}
+    \newcommand{\distancebetween}{20}
+    \newcommand{\shiftdistance}{100}
+    \newcommand{\scalingfactor}{0.12}
+    \newcommand{\halfscalingfactor}{\scalingfactor}
+    
+    \begin{scope}
+        \input{images/joint/pipeline/raw.tex}
+        % \node[ultra thick, left=of raw1,yshift=5mm] {$t\phantom{+1}$};
+        % \node[ultra thick, left=of raw2,yshift=5mm] {$t+1$};
+        \input{images/joint/pipeline/seg.tex}
+        \input{images/joint/pipeline/merging.tex}
+        \begin{pgfonlayer}{background}
+            \node[plbg, fit=(raw2.south west) (raw2.north west)
+            (raw1.north east) (cc1.south east) (labelraw)] (bg1) {};
+        \end{pgfonlayer}
+        \draw[arrows=->, ultra thick, transform canvas={xshift=-15}] (bg1.north west) -- (bg1.south
+        west) node[midway, xshift=-7] (t1) {\large{$t$}};
+    \end{scope}
+    \begin{scope}[yshift=-7.5*\distancebetween, xshift=100]
+        \input{images/joint/pipeline/graph.tex}
+        % \node[ultra thick, left=of raw1,yshift=5mm] {$t\phantom{+1}$};
+        % \node[ultra thick, left=of raw2,yshift=5mm] {$t+1$};
+        \input{images/joint/pipeline/result.tex}
+        \begin{pgfonlayer}{background}
+            \node[plbg, fit=(bglow.south west) (bglow.north west)
+            (bgup.north east) (res1.south east) (labelres.south)] (bg2) {};
+        \end{pgfonlayer}
+        \draw[arrows=->, ultra thick, transform canvas={xshift=-15}] (bg2.north west) -- (bg2.south
+        west) node[midway, xshift=-7] (t2) {\large{$t$}};
+    \end{scope}
+
+    \begin{pgfonlayer}{background}
+        \coordinate[xshift=0mm,left=of t1] (hawaii);
+        \coordinate[right=of bg1.east,xshift=0mm] (coordeast);
+        % \coordinate[below right=of bg1.south east,yshift=-5mm] (coordsouth);
+        \coordinate (helper) at ($(bg1.south)!0.5!(bg2.north)$);
+        \coordinate (coordsoutheast) at (coordeast |- helper);
+        \coordinate[left=of t2.west,xshift=0mm] (coordwestwest);
+        \coordinate[xshift=15mm] (coordwest) at (coordwestwest);
+        \coordinate (coordsouthwest) at (coordwestwest |- helper);
+        \path[arrows=->,draw, line width=4mm, color=red!40, rounded corners=5pt] (hawaii) -- (bg1.east) -- (coordeast) --
+(coordsoutheast) -- (coordsouthwest) -- (coordwestwest) -- (coordwest) -- (coordeast |- bg2.east);
+    \end{pgfonlayer}
+    
+\end{tikzpicture}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

@@ -1,0 +1,107 @@
+\section{Overview}
+\label{sec:joint-overview}
+
+Joint segmentation and tracking describes a method that breaks the fixed border between the
+segmentation phase and the tracking phase in a
+tracking-by-assignment~(\cref{sec:tracking-by-assignment}). More precisely, at first an
+oversegmentation of the raw data is generated such that each foreground \emph{segment} contains not
+more than a single cell. On the contrary, each cell in the raw data may consist of multiple
+segments. The tracking model then decides whether a segment belongs to foreground or background and
+groups segments into cell objects.
+
+For clarity and an unambiguous definition of the joint segmentation and tracking, we first define
+notational conventions that will be used throughout this chapter.
+\begin{mydef}
+    \label{def:joint-segment}
+    A \emph{segment} or \emph{superpixel/-voxel} is the smallest unit in a segmentation. It is part of or a complete foreground
+    object.
+\end{mydef}
+
+\begin{mydef}
+    \label{def:joint-region}
+    A \emph{region} is either a single segment or the union of two neighboring regions. Thus, the
+    segments form a subset of all regions. Neighborhood relationships can be visualized in a
+    \emph{region adjacency graph}.
+\end{mydef}
+
+\begin{mydef}
+    \label{def:joint-conflict}
+    Two regions \emph{contradict} each other if the intersection of their contained segments is not
+    the empty set. In other words, they form a \emph{conflict}. These conflicts can be visualized in
+    a conflict graph.
+\end{mydef}
+
+\begin{mydef}
+    \label{def:joint-connected-component}
+    A \emph{connected component} contains all segments that are connected by a path in the region
+    adjacency graph.
+\end{mydef}
+Note that, by definition, a connected component is also a region. 
+
+\begin{mydef}
+    \label{def:joint-cardinality}
+    The \emph{cardinality} of a region $r$ is the number of segments that the region consists of. It
+    is denoted by $|r|$.
+\end{mydef}
+In the context of a conflict graph, the cardinality of a region $r$ is the number of maximal
+cliques~(\cref{def:clique}) or \emph{``conflict sets''} in the conflict graph that contain region
+$r$. In general, each conflict set contains exactly one segment, which can be used as an identifier
+of the conflict set. These definitions are subsumed in \cref{tab:joint-definitions} with
+illustrative visualizations.  \newlength\tablenormaltext
+\settototalheight\tablenormaltext{\parbox{\linewidth}{Raw Data}}
+\begin{table}
+    \centering
+    \scalebox{0.85}{
+        \input{images/joint/definitions.tex}
+    }
+    \caption[Notational conventions in the joint segmentation and tracking]{Notational conventions in the joint segmentation and
+        tracking with visualizations on a cell from data set
+        C~(\cref{subsubsec:gmm-data-c}). Segments and regions are color coded for better
+        distinguishability. In case of overlapping regions, multiple images are added.}
+    \label{tab:joint-definitions}
+\end{table}
+
+With the definitions at hand, we now give a brief digest of our new joint segmentation and tracking
+method. First, we obtain a possibly undersegmented partition of the raw data into foreground and
+background. At this stage, a foreground connected component may contain more than one single
+cell. Moreover, the segmentation aims to include all cells in the data into foreground, regardless
+of possibly merged objects~(\cf \cref{fig:joint-underseg-mergers}). Then, another segmentation
+algorithm is applied to the foreground mask of the data with the intent to
+oversegment~(\cref{sec:joint-oversegmentation}). This divides the foreground into segments from which an
+initial region adjacency graph is created. Next, regions are gradually merged to form a richer set of
+\emph{segmentation hypotheses}. The \emph{tracking hypotheses graph} is then formulated on the
+connected component in the image. An edge connecting two nodes $n_1$, $n_2$ in this graph means that
+any pair of two regions, one from $n_1$ and one from $n_2$, is a potential tracking
+assignment. Finally, a factor graph~(\cref{sec:joint-graphical-model}) is built on top of the
+hypotheses graph. The factor graph incorporates prior belief on configurations inferred by local
+classifiers~(\cref{sec:joint-classifiers}) as well as restrictions on possible assignments and
+segmentation hypotheses that are defined by the conflict graph and the requirements of cell
+tracking. Then, inference on this factor graph yields the optimal tracking solution. This procedure
+is illustrated in \cref{fig:joint-pipeline}.
+
+\begin{figure}
+    \centering
+    \scalebox{0.8}{
+        \input{images/joint/pipeline/pipeline.tex}
+    }
+    \caption[Joint segmentation and tracking pipeline]{Joint segmentation and tracking
+        pipeline. First, an initial oversegmentation is generated from raw data. Then, a richer set
+        of segmentation hypotheses is created by merging existing regions. Note that the empty frame
+        at the later time step indicates that there is no intermediate region merging as the
+        connected component consists of only two segments and merging them results in the connected
+        component. The factor graph models assignment hypotheses and incorporates cell tracking and
+        consistency constraints. Finally, MAP inference on the factor graph yields the tracking
+        result.}
+    \label{fig:joint-pipeline}
+\end{figure}
+
+After an in depth introduction to the proposed method in
+\crefrange{sec:joint-oversegmentation}{sec:joint-classifiers}, \cref{sec:joint-experiments} shows
+experimental results. Note that the proposed method is equivalent to chain graph tracking
+(\cref{subsec:fg-chaingraph}) with learned factors in case of single object connected components,
+\ie each connected component contains exactly one segment.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

@@ -1,0 +1,59 @@
+\begin{scope}
+    \node (t2) {\huge $t$};
+    \node[hypotheses_one_object, below=of t2.north, circle, draw,yshift=10mm] (x21) {$X_l^{t}$};
+    \node[hypotheses_one_object, below=of t2.north, circle, draw,yshift=-21mm] (x22) {$X_h^{t}$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t2, xshift=-10mm] (t1) {\huge $t+1$};
+    \node[hypotheses_two_objects, below=of t1.north, circle, draw,yshift=-2mm] (x11) {$X_i^{t+1}$};
+\end{scope}
+
+\begin{scope}[on background layer]
+    \node[hypotheses_one_object, below=of t1.north, circle, draw,yshift=10mm] (x12) {$X_j^{t+1}$};
+    \node[hypotheses_one_object, below=of t1.north, circle, draw,yshift=-21mm] (x13) {$X_h^{t+1}$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t1, xshift=10mm] (t3) {\huge $t^{\prime}-1$};
+    \node[hypotheses_two_objects, below=of t3.north, circle, draw,yshift=-2mm] (x31) {$X_m^{t^{\prime}-1}$};
+\end{scope}
+
+\begin{scope}[on background layer]
+    \node[hypotheses_one_object, below=of t3.north, circle, draw,yshift=10mm] (x32) {$X_j^{t}$};
+    \node[hypotheses_one_object, below=of t3.north, circle, draw,yshift=-21mm] (x33) {$X_h^{t+1}$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t3, xshift=-10mm] (t4) {\huge $t^{\prime}$};
+    \node[hypotheses_one_object, below=of t4.north, circle, draw,yshift=10mm] (x41) {$X_n^{t^{\prime}}$};
+    \node[hypotheses_one_object, below=of t4.north, circle, draw,yshift=-21mm] (x42) {$X_j^{t^{\prime}}$};
+\end{scope}
+
+% \coordinate[xshift=8mm] at (x11.east) (c1);
+% \coordinate[xshift=-8mm] at (x31.west) (c2);
+
+
+
+\path[hypothesestransition] (x11) edge (x21);
+\path[hypothesestransition] (x11) edge (x22);
+\path[hypothesestransition] (x31) edge (x41);
+\path[hypothesestransition] (x31) edge (x42);
+\path[hypothesestransition, dashed] ($(x11.east)!0.2!(x31.west)$) edge ($(x11.east)!0.8!(x31.west)$);
+
+\begin{scope}[on background layer]
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x12) (x13), inner sep=4mm] (b1) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x21) (x22), inner sep=4mm] (b2) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x32) (x33), inner sep=4mm] (b2) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x41) (x42), inner sep=4mm] (b1) {};
+\end{scope}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

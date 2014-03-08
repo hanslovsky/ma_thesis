@@ -1,0 +1,68 @@
+\input{preamble/docclass.tex}
+\input{preamble/packages.tex}
+\input{preamble/commands.tex}
+\input{preamble/settings.tex}
+\input{preamble/tikz-styles.tex}
+\input{preamble/titlepage_styles.tex}
+
+\begin{document}
+
+\getmainfile
+\getabspath{\themainfile}
+\let\mainabsdir\theabsdir
+\let\mainabspath\theabspath
+
+\selectlanguage{english}
+
+% \linespace{1.5}
+
+\frontmatter
+
+\input{pages/frontpage.tex}
+\input{pages/abstracts.tex}
+\input{pages/acknowledgements.tex}
+\input{pages/tableofcontents.tex}
+\input{pages/listoffigures.tex}
+\input{pages/listoftables.tex}
+
+
+
+
+
+\mainmatter
+\setstretch{1.1}
+\input{content/introduction.tex}
+%%% \input{content/related_work.tex}
+%%% \input{content/cell_tracking.tex}
+\input{content/graphical_models_and_tracking.tex}
+%%% \input{content/segmentation.tex}
+\input{content/addressing_undersegmentation.tex}
+\input{content/conclusion.tex}
+%%% \input{content/experiments.tex}
+%%% \input{content/discussion.tex}
+
+
+\appendix
+\input{pages/appendix.tex}
+% \input{pages/acknowledgements.tex}
+\input{pages/bibliography.tex}
+\selectlanguage{german}
+\input{pages/depositions.tex}
+
+
+
+
+
+\end{document}
+
+
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+

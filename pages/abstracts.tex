@@ -1,0 +1,33 @@
+%% Abstract page
+%% =============
+%%
+%% Content of abstract pages has been put into seperate pages to simplify
+%% word counting. Use e.g. the unix command
+%%   wc abstract-ger.tex
+%% or
+%%   wc abstract-eng.tex
+%% to get the number of words contained in these files.
+\thispagestyle{empty}
+%\begin{center}
+%\begin{minipage}[c][1.151\textheight][b]{0.9\textwidth}
+{      \small
+      \noindent
+      \textbf{\mytitleGerman:} % \par
+      %\vspace{0.5\baselineskip}
+    % \vspace{\baselineskip}
+    \input{pages/abstract-ger}
+    \vspace{1.5\baselineskip}
+    \small
+    \noindent
+    \textbf{\noindent\mytitle:} % \par
+    % \vspace{0.5\baselineskip}
+      % \vspace{\baselineskip}
+    \input{pages/abstract-eng}
+    }
+%  \end{minipage}
+%\end{center}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End: 

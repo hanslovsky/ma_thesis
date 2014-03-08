@@ -1,0 +1,76 @@
+\chapter{Circumventing Undersegmentation - Joint Segmentation and Tracking}
+\label{cha:joint}
+
+Conservation tracking in conjunction with Gaussian mixture models is a powerful tool when it comes
+to handling undersegmentation in the sense of multiple cells merged into a single foreground
+object. Still, the overall result is strongly dependent on the segmentation. Another limitation is
+the number of objects in a connected component being decided upon before the single objects are
+reconstructed. The features of a single object are a strong indicator for the object being an actual
+cell or clutter. This information cannot be taken into account in the conservation tracking
+pipeline, as the number of objects in a connected component is inferred before
+reconstruction. Furthermore, the existence of too many mergers, or mergers that cannot be resolved
+due to the lack of a merging or demerging event, restrains the ability of the conservation tracking
+algorithm to determine the correct number of cells within a connected
+component. \cref{fig:joint-motivation-example} gives an example for data that requires a compromise
+between segmenting as many cells as possible, even if close to background, and keeping the number
+and size of merged objects low.
+
+In order to circumvent the need for a compromise, we introduce a method for joint segmentation and
+tracking in this thesis. This method additionally addresses lost cells that are close to
+background. Instead of accepting a compromise as described above, the image needs to be
+oversegmented in a sense that each cell is represented by at least one segment (also superpixel or
+-voxel), and each segment cannot comprise more than one single cell. A probabilistic graphical model
+then chooses -- with the help of global temporal information -- an appropriate final
+segmentation. In contrast to conservation tracking with GMM, changing the segmentation is part of
+the model and not only a post-processing operation. An overview as well as a detailed explanation of
+each part of the algorithm are given in \crefrange{sec:joint-overview}{sec:joint-classifiers},
+followed by experiments and results in \cref{sec:joint-experiments}.
+
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{images/joint/mitocheck_255_max.pdf}
+        \caption{This image shows raw data in its original intensity range $[0, 255]$. Cells that
+            are close to background are not visible and are lost to the human observer
+            (\cf~\cref{fig:joint-underseg-mergers}). This is equivalent to using only training
+            examples that are distinct from background. Similar to the human observer, the
+            classifier then will lose objects that are close to the background. Red color indicates
+            cells that were lost in \cref{fig:joint-underseg-no-detection} while present in
+            \cref{fig:joint-underseg-mergers}. In contrast, a green margin shows cells that are
+            separated correctly in \cref{fig:joint-underseg-no-detection} while being merged in
+            \cref{fig:joint-underseg-mergers}.}
+        \label{fig:joint-underseg-no-detection}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{images/joint/mitocheck_030_max.pdf}
+        \caption{Here, the image range $[0, 30]$ has been mapped to $[0, 255]$. In addition, any
+            value greater than $30$ in the original image has been set to $255$. While this reveals
+            many unseen cells, marked in green (red in \cref{fig:joint-underseg-no-detection}),
+            it also produces more and larger mergers. Affected cells are enclosed in red, their
+            counterparts in green in \cref{fig:joint-underseg-no-detection}. This
+            corresponds to a segmentation classifier that is trained on near background cells as
+            well. }
+        \label{fig:joint-underseg-mergers}
+    \end{subfigure}
+    \caption[Undersegmentation in different segmentation approaches]{Illustration of the
+        shortcomings of different segmentation approaches that both suffer from undersegmentation,
+        based on data set C~(\cref{subsubsec:gmm-data-c}): either by losing many
+        cells~(\subref{fig:joint-underseg-no-detection}) or by producing more and larger
+        mergers~(\subref{fig:joint-underseg-mergers}). Examples for strengths and weaknesses of each
+        approach are marked by green and red margins respectively.}
+    \label{fig:joint-motivation-example}
+\end{figure}
+
+\input{content/addressing_undersegmentation/joint_segmentation_and_tracking/overview}
+\input{content/addressing_undersegmentation/joint_segmentation_and_tracking/oversegmentation}
+\input{content/addressing_undersegmentation/joint_segmentation_and_tracking/graphical_model}
+\input{content/addressing_undersegmentation/joint_segmentation_and_tracking/classifiers}
+\input{content/addressing_undersegmentation/joint_segmentation_and_tracking/experiments}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

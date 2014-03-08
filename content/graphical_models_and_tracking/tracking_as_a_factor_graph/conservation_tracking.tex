@@ -1,0 +1,199 @@
+\subsection{Conservation Tracking}
+\label{subsec:fg-conservation}
+
+The chain graph tracking as described above is capable of handling an unknown number of dividing
+objects, if each detection contains one cell at maximum. This means that the segmentation must
+contain all cells in the data set as individual objects in order to achieve an accurate tracking
+result. As a consequence, speckle noise (false positives) can be handled by chain graph tracking.
+``Mergers'' however, that may occur by occlusions in 2d or due to bad imaging quality in 2d and 3d,
+pose an obstacle for the chain graph tracking: When two or more cells are merged into a single
+connected component due to undersegmentation, all but one of the associated tracks will get lost, as
+the chain graph energies (Equations~\ref{eq:cg-cost-out} to~\ref{eq:chaingraph-cost-det}) disallow merging, \ie a
+cell has more than once ancestor. From a chain graph tracking point of view, the lost tracks appear
+either as disappearances or a series of false positive detections in the time steps previous to the
+merging event. In a similar fashion, a demerging of a merger object cannot be handled correctly by
+the chain graph tracking either. Here, the chain graph tracking would interpret the incident as a
+transition from the merged object to one of its possible descendants in the next time step in
+conjunction with either one or more appearances or false positive detections. Furthermore, a
+demerging of two cells might be misinterpreted as a division.
+
+Since unique detections of all cells cannot be guaranteed in dense cell populations or poor image
+quality, \citet{schiegg_13_conservation} propose a method that can also handle merges. They leave
+behind the assumption that a detection matches exactly one cell or is a false positive. In terms of
+graphical models, this means that, in contrast to the chain graph tracking model, the random
+variables are not binary, but discrete variables that carry information about how many cells they
+represent (one detection variable still represents a single detection). They then apply conservation
+laws that ensure ``global consistency of the solution''. This allows for detection of merged cells,
+\ie detections that represent more than one cell. A more detailed description of this method is
+provided in the following including an overview of the pipeline in
+\cref{fig:fg-conservation-pipeline}. Reconstruction of the identities of the involved cells requires
+an additional post-processing step which is our contribution and will be discussed in detail in
+\cref{cha:GMM}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{images/conservation/pipeline.png}
+    %\rule{\textwidth}{0.3pt}
+    \caption[Conservation tracking pipeline]{Pipeline of the conservation tracking (taken and modified
+        from~\cite{schiegg_13_conservation}): First cells are detected in the segmentation
+        step. Then, cross correlation is used for estimating the cell positions in subsequent
+        time steps. Based on these corrected positions, the hypotheses graph is generated. Finally,
+        inference on the corresponding factor graph yields a tracking result. In order to inject
+        prior belief, the predictions of classifiers for divisions and the number of objects in a
+        detection are taken into account in the potentials of the factor graph.} 
+    \label{fig:fg-conservation-pipeline}
+\end{figure}
+
+\citet{schiegg_13_conservation} use a factor graph for modeling. To this end, they introduce
+discrete multi-state random variables for detections, $X_i^t \in \{0,\dots ,m\}$,
+representing connected component $i$ at time step $t$. The state of such a detection variable
+determines the number of cells that are comprised in the corresponding connected
+component. Additionally, transition random variables $T_{ij}^t, \in \val(T_{ij}^t)=\{0,\dots ,m\}$
+represent transitions from detection $i$ at time $t$ to detection $j$ at time $t+1$. Here, the
+design parameter $m$ specifies the maximum allowed number of cells per connected
+component. Moreover, the transition variables can be interpreted as some ``flow'' of mass going from
+detection $i$ at time $t$ to detection $j$ at time $t+1$. Then, conservation laws, hence the name
+``conservation tracking'', ensure global consistency. However, appearances and disappearances are
+not consistent with these conservation laws. Therefore, to allow for breaking these laws, $X_i^t$
+is defined deterministically as
+\begin{align}
+    \label{eq:cons-det-a-v}
+    X_i^t& = \max(V_i^t, A_i^t), \\
+    \val(V_i^t) &= \val(A_i^t) = \{0,\dots ,m\},
+\end{align}
+with discrete random variables $V_i^t$ and $A_i^t$, which need not follow conservation laws, thus
+making appearances and disappearances possible. Then an appearance is modeled by $V_i^t=0,
+A_i^t=k>0$ (Equation~\ref{eq:fg-conservation-det-b} and a disappearance by $V_i^t=k>0, A_i^t=0$
+(Equation~\ref{eq:fg-conservation-det-c}). Therefore, partial appearances or disappearances are not
+possible (Equation~\ref{eq:fg-conservation-det-d}). On the contrary, $V_i^t=A_i^t$
+(Equation~\ref{eq:fg-conservation-det-c}) represents a connected component, which does not appear or
+disappear, \ie it has possibly multiple ancestors and descendants, with the special case of a false
+positive detection $V_i^t=A_i^t=0$.
+% representing the event of disapperance and
+% appearance respectively. This is neccessary because an appearance means, that no mass is flowing
+% into the cell, which would be a violation of the conservation law. This holds for disappearances
+% analogously. Thus, the conservation law between vanishing and appearing nodes needs to be redefined:
+% Both variables may be in the same state, representing a false positive detection in case of state
+% zero and a transition otherwise. Moreover, either of the variables may be zero while the other is
+% non-zero. This is the case when a cell disappears or appears. A partial appearance or disappearance
+% is not allowed, which is enforced by disallowing configurations where vanishing and appearaing
+% variable are both non-zero, but not in the same state.
+
+Furthermore, to distinguish between a division and the demerging into two single cells, a
+binary division variable $D_i^t \in \{0, 1\}$ is introduced that indicates whether a cell is dividing
+into two children cells, or not.
+
+\cref{fig:conservation-fg} shows how these random variables are brought into relation in a factor
+graph. In order to pull the configuration of random variables towards a meaningful tracking
+solution, the factors of this graph score configurations by assigning a high energy to states that
+are unlikely to resemble a real tracking while keeping the energy of more likely, preferable
+configurations low. Moreover, they disallow illegal configurations as specified above.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/conservation/factor_graph.png}
+    %\rule{\textwidth}{0.3pt}
+    \caption[Conservation tracking factor graph]{Factor graph of the conservation tracking model
+        (taken from \citet{schiegg_13_conservation}): The excerpt of the factor graph shows
+        variables that share potentials with a transition node, or, more precisely, with the
+        vanishing node and the appearing node, that determine the state of the transition node.}
+    \label{fig:conservation-fg}
+\end{figure}
+
+In the following, the factors are specified. To begin with, the \emph{detection factor}
+\begin{align}
+    \label{eq:fg-conservation-det}
+    \psi_{\text{det}}(A_i^t,V_i^t,f_i^t) &= e^{-E_{\text{det}}(A_i^t,V_i^t,f_i^t)},
+\end{align}
+\begin{subnumcases}{E_{\text{det}}(A_i^t,V_i^t,f_i^t) =}
+    -\log\bigl(\hat{P}(X_i^t=k|f_i^t)\bigr), &$V_i^t=A_i^t=k$ \label{eq:fg-conservation-det-a}\\
+    -\log\bigl(\hat{P}(X_i^t=k|f_i^t)\bigr) + kw_{\text{app}}, &$V_i^t=0, A_i^t=k > 0$ \label{eq:fg-conservation-det-b}\\
+    -\log\bigl(\hat{P}(X_i^t=k|f_i^t)\bigr) + kw_{\text{dis}}, &$V_i^t=k > 0, A_i^t=0$ \label{eq:fg-conservation-det-c}\\
+    \infty, &$\text{otherwise}$ \label{eq:fg-conservation-det-d}
+\end{subnumcases}
+takes into account local evidence $f_i^t$, \eg size or mean, and weighs configurations according to
+their probability $\hat{P}(X_i^t=k|f_i^t)$ that a connected component contains
+\mbox{$k\in\{0,\hdots,m\}$} cells given $f_i^t$, as determined by a random forest
+classifier~(Equations~\ref{eq:fg-conservation-det-a} to \ref{eq:fg-conservation-det-c}, \cref{cha:app-rf}). The design
+parameter $m$ specifies the maximum number of cells per connected component, whereas the design
+parameters $w_{\text{app}}$ and $w_{\text{dis}}$ are penalties for appearing and disappearing cells
+respectively. Furthermore, $E_{\text{det}}$ forbids illegal configurations by assigning infinite
+energy (Equation \ref{eq:fg-conservation-det-d}), corresponding to zero probability.
+
+Secondly, unary factors on the transitions
+\begin{align}
+    \label{eq:fg-conservation-trans}
+    -\log\left(\phi_{\text{tr}}(T_{ij}^t,d_{ij}^t)\right) = E_{\text{tr}}(T_{ij}^t,d_{ij}^t) = -w_{\text{tr}}
+    \begin{cases}
+        1-\exp\left(-\frac{d_{ij}^t}{\alpha}\right), & T_{ij}^t=0 \\
+        \exp\left(-\frac{d_{ij}^t}{\alpha}\right), & T_{ij}^t > 0
+    \end{cases}
+\end{align}
+are constructed by the squared difference between the two cells involved in the potential transition
+with design parameters $\alpha$ and $w_{\text{tr}}$. As an additional feature, the authors estimate the position of a
+cell in the subsequent time step and calculate the squared distance with respect to that
+position. This is a penalty on the acceleration rather than on the velocity of a cell, which
+represents natural behavior in a better way. More precisely, the position estimate is the result of
+performing patch-wise cross correlation~\citep[Chapter~14.5]{jaehne_05_digital} on successive frames of the binary segmentation.
+
+In a similar fashion, unary factors on the division variables
+\begin{align}
+    \label{eq:fg-conservation-div}
+    -\log\left(\phi_{\text{div}}(D_i^t, f_i^t)\right) = &E_{\text{div}}(D_i^t, f_i^t) \\= &-w_{\text{div}}
+    \begin{cases}
+        \log\left(1-\hat{P}(D_i^t=1|f_i^t)\right), & D_i^t = 0 \\
+        \log\left(\hat{P}(D_i^t=1|f_i^t\right), & D_i^t = 1
+    \end{cases}
+\end{align}
+embody the probability that a cell is about to divide, provided by a random forest 
+classifier trained on cell detections. Again, $f_i^t$ describes local features and $w_{\text{div}}$
+is a design parameter that -- like $w_{\text{tr}}$ -- weights the division prior against the
+detection prior.
+
+Finally, the conservation laws are implemented as constraints in the outgoing factor
+\begin{align}
+    \label{eq:fg-conservation-out}
+    \psi_{\text{out}}(A_i^t, T_{ij_1}^t,\dots ,T_{ij_n}^t) = e^{-E_{\text{out}}(A_i^t, T_{ij_1}^t,\dots ,T_{ij_n}^t)},
+\end{align}
+\begin{subnumcases}{\label{eq:cons-out} E_{\text{out}}(A_i^t, T_{ij_1}^t,\dots ,T_{ij_n}^t) =}
+    \infty, & $\sum_{l\in \{j_1,\dots , j_n\}} T_{il}^t \ne A_i^t + D_i^t$ \label{eq:cons-out-a} \\
+    \infty, & $\exists l \in \{j_1,\dots , j_n\}: T_{il}^t > A_i^t$ \label{eq:cons-out-b}\\
+    \infty, & $\sum_{l\in \{j_1,\dots , j_n\}} T_{il}^t \ne 2 \text{ if } D_i^t =
+    1$ \label{eq:cons-out-c} \\
+    \infty, & $A_i^t \ne 1 \text{ if } D_i^t = 1$ \label{eq:cons-out-d} \\
+    0, & $\text{otherwise}$ \label{eq:cons-out-e}
+\end{subnumcases}
+and in the incoming factor analogously. These constraints have a meaningful interpretation in the
+context of mass conservation laws: Equation \ref{eq:cons-out-a} ensures conservation of mass from a
+detection to the corresponding outgoing transitions. In case of a division, the additional mass is
+created by the division variable (Equations \ref{eq:cons-out-a} and
+\ref{eq:cons-out-b}). Furthermore, a merger cannot be a dividing object (Equation
+\ref{eq:cons-out-d}). In conjunction with Equations \ref{eq:cons-out-a} and \ref{eq:cons-out-c},
+this implies that a division cell must have exactly two children and that the mass involved in a
+division is $2$, equally distributed on the division variable and the detection variable.
+
+The product of all of these factors, divided by the partition function $Z$ defines the probability for
+a specific configuration of all random variables:
+\begin{align}
+    \label{eq:fg-conservation-prob}
+    P(\mathcal{A}, \mathcal{V}, \mathcal{D}, \mathcal{T}) = \frac{1}{Z}\prod_t\prod_i \Biggl(
+    &\psi_{\text{det}}\left(A_i^t,V_i^t,f_i^t\right ) \phi_{\text{div}}\left(D_i^t\right)
+    \prod_j\left(\phi_{\text{tr}}(T_{ij}^t)\right) \\\nonumber \times &\psi_{\text{out}}\left(A_i^t,
+        T_{ij_1}^t,\hdots T_{ij_n}^t\right) \psi_{\text{in}}\left(A_i^t, T_{h_1i}^{t-1},\hdots
+        T_{h_ni}^{t-1}\right) \Biggr)
+\end{align}
+
+Just as in the chain graph tracking (\cref{subsec:fg-chaingraph}), the MAP solution is inferred by
+reformulating \cref{eq:fg-conservation-prob} as a Gibbs energy that is minimized in an ILP:
+\begin{align}
+    \argmax_{\mathcal{A}, \mathcal{V}, \mathcal{D}, \mathcal{T}}P(\mathcal{A}, \mathcal{V},
+    \mathcal{D}, \mathcal{T}) & = \argmin_{\mathcal{A}, \mathcal{V}, \mathcal{D}, \mathcal{T}} E(\mathcal{A}, \mathcal{V}, \mathcal{D}, \mathcal{T}) \\
+    &= \argmin_{\mathcal{A}, \mathcal{V}, \mathcal{D}, \mathcal{T}}\left(-\log P(\mathcal{A},
+        \mathcal{V}, \mathcal{D}, \mathcal{T})\right).
+    \label{eq:fg-conservation-map}
+\end{align}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

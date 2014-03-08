@@ -1,0 +1,34 @@
+\begin{scope}[xshift=\shiftdistance, baseline=(seg2)]
+    \begin{scope}[yshift=\distancebetween,
+        every node/.append style={yslant=0.5,xslant=-1},
+        yslant=0.5,xslant=-1]
+        \node[inner sep=0, label={[xshift=5]above:{}}] (seg1) {
+            \includegraphics[width=\scalingfactor\textwidth]{images/joint/pipeline/78_seg_crop.png}
+        };
+    \end{scope}
+    \begin{scope}[every node/.append style={yslant=0.5,xslant=-1},yslant=0.5,xslant=-1]
+        \begin{pgfonlayer}{bglower}
+            \node[inner sep=0, label={[xshift=15]above:{}}] (seg2) {
+                \includegraphics[width=\scalingfactor\textwidth]{images/joint/pipeline/79_seg_crop.png}
+            };
+        \end{pgfonlayer}
+    \end{scope}
+    \coordinate (base1) at (seg2.north west |- seg2.south west);
+    \coordinate (base2) at (seg2.south east |- seg2.south west);
+    % \draw [pllbl]
+    % (base1) -- (base2) node[black,midway,yshift=-0.6cm]
+    % {Initial Oversegmentation};
+    \path let \p1 = (base1.west), \p2 = (base2.east) in
+    node[pllbltxt, minimum width=\x2-\x1] (labelseg) at ($(base1)!0.5!(base2)$) {Oversegmentation};
+    \begin{pgfonlayer}{bglower}
+        \path[threed] (seg2.south east) -- (seg1.south east);
+        \path[threed] (seg2.north east) -- (seg1.north east);
+        \path[threed] (seg2.south west) -- (seg1.south west);
+        \path[threed] (seg2.north west) -- (seg1.north west);
+    \end{pgfonlayer}
+\end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

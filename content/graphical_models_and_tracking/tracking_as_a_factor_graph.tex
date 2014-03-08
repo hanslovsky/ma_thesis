@@ -1,0 +1,27 @@
+\section{Tracking as a Factor Graph}
+\label{sec:tracking-as-a-factor-graph}
+The tracking-by-assignment problem can be solved using probabilistic graphical models. For that
+purpose, random variables for the assignments and detections are introduced, thus imposing
+uncertainty. These random variables are used to construct a graphical model from the tracking
+hypotheses whose specific form is a design choice of the tracking approach. The optimal solution is
+then deduced by performing inference on the graphical model. In general, it is reasonable to
+transfer the graphical model into a factor graph before inference, if not already formulated as a
+factor graph directly.
+
+In the following, two approaches are described, that utilize the power of probabilistic graphical
+models, namely \emph{chain graph} tracking in \cref{subsec:fg-chaingraph} and \emph{conservation}
+tracking in \cref{subsec:fg-conservation}. While the chain graph approach uses a \emph{chain graph},
+\ie a graphical model with both directed and undirected edges
+(\citealp[Chapter~4.1.5]{kausler_13_tracking};
+\citealp[Chapter~4.6.2]{koller_09_probabilistic},
+\citealp{frydenberg_90_chain}), for modeling and a factor graph for inference, the
+conservation tracking models a factor graph directly.
+
+\input{content/graphical_models_and_tracking/tracking_as_a_factor_graph/chaingraph_tracking}
+
+
+\input{content/graphical_models_and_tracking/tracking_as_a_factor_graph/conservation_tracking}
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

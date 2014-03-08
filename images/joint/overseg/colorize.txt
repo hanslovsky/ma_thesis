@@ -1,0 +1,4 @@
+
+run("Images to Stack", "name=Stack title=[] use");
+run("8-bit");
+run("LUT... ", "open=/home/phanslov/git/ma-tex/thesis/images/joint/overseg/random.lut");

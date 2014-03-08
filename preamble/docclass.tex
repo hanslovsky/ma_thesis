@@ -1,0 +1,34 @@
+% scrbook as document class to try out KOMA script.
+% If I am not satisfied, I will migrate back to the
+% standard document types
+% The KOMA scrbook documentbook defaults to empty pages
+% before the beginning of a chapter
+
+% documentclass
+\documentclass[headinclude,
+footinclude%,draft
+]{scrbook}
+
+% a4 paper size
+\KOMAoptions{paper = a4}
+
+% font size 12pt
+\KOMAoptions{fontsize = 11pt}
+
+% two sided output
+\KOMAoptions{twoside = true}
+
+% titlepage has its own page
+\KOMAoptions{titlepage = true}
+
+% write size of file to output
+\KOMAoptions{pagesize}
+
+% bindekorrektur: maximal buchdicke/2
+\KOMAoptions{BCOR=5mm}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End: 

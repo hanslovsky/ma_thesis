@@ -1,0 +1,284 @@
+\section{Hypotheses Graph on Subset of Cells and Inference}
+\label{sec:gmm-hypotheses}
+The conservation tracking constructs a hypotheses graph (\cref{fig:gmm-hypotheses-graph-orig}) of
+possible cell transitions (edges) between detections (nodes) in consecutive time frames. It then
+formulates the assignment problem as a factor graph with random variables for detections and
+assignments (see \cref{subsec:fg-conservation} for more details). Finally, the MAP solution on the
+factor graph yields the correct (active) assignments and detections. In the modified hypotheses
+graph, detection variables now take values between zero (inactive) and the maximum number of allowed
+mergers per connected component. According to the inferred MAP configuration, the assignment
+variables are labeled active ($\ge 1$) or inactive ($0$). This modified subgraph
+(\cref{fig:gmm-hypotheses-graph-inferred}, inactive edges have been removed for visualization) is
+the basis for cell reconstruction and merger resolution by the means of GMMs. In general, the merger
+resolution follows these steps:
+\begin{enumerate}
+      \item Extract a subset of the hypotheses graph containing
+    \begin{itemize}
+          \item all detection nodes with $X_i^t = k > 1$, \ie all merged objects,
+          \item all active transition edges connected to these detection variables, and
+          \item all active detection nodes $X_i^t = \bar{k} = 1$ that are connected to a merger
+        detection node by an active transition edge.
+    \end{itemize}
+      \item Infer $k$ means and covariances for all merger detection nodes by following
+    \cref{sec:gmm-gmm}, \ie fit a GMM clustering to each connected component associated with a merger
+    object separately.
+      \item Replace each merger detection node by $k$ new detection nodes and duplicate the
+    assignment variables analogously.
+      \item Formulate the factor graph and rerun inference on the subgraph with new constraints to
+    determine true assignments.
+\end{enumerate}
+In the following, each of these steps is defined in detail by means of a hypothetical example with
+figures that illustrate the procedure. Despite the example being hypothetical, it still reflects a
+hypotheses graph that may occur in a real tracking problem as part of a larger hypotheses graph.
+
+\cref{fig:gmm-hypotheses-graph-orig} shows an exemplary hypotheses graph over four time steps. This
+hypotheses graph is constructed from connected components on the segmented image.  Here, each node
+is assumed to refer to a connected component containing at least one real cell, \ie no false
+positives. The transition hypotheses are created based on a thresholded one-nearest-neighbor search,
+both in forward and backward direction in time, where the distance between two cells $c_1$, $c_2$
+\begin{align}
+    \label{eq:gmm-region-distance}
+    \dis(c_1, c_2) &= \dis\left(\rc(c_1), \rc(c_2)\right) = \lVert \rc(c_1) - \rc(c_2) \rVert_2^2 \\
+    \label{eq:gmm-region-center}
+    \rc_i(c) &= \frac{1}{\lvert c \rvert} \sum_{p \in c} p_i \; \forall i\in\{1,\hdots,N\}
+\end{align}
+is the squared $L_2$-distance between their region centers $\rc(c_1)$, $\rc(c_2)$. The $i$-th
+component of the region center of cell $c$ in $N$ spatial dimensions is calculated in
+\cref{eq:gmm-region-center}. $p_i$ is the $i$-th coordinate of pixel $p$ in an $N$-dimensional volume that is part
+of cell $c$ that, in turn, consists of $\lvert c \rvert$ pixels.
+
+The only ``non-competing'' transitions are $T_{1\to 5}^t$ connecting $X_1^t$ to $X_5^{t+1}$ and
+$T_{8\to 10}^{t+2}$ from $X_8^{t+2}$ to $X_{10}^{t+3}$ that can be identified as moves directly from
+the original hypotheses graph. For all other transitions, inference on the factor graph yields an
+optimal solution which best resembles a meaningful tracking. The factor graph construction is
+explained in \cref{subsec:fg-conservation}.
+
+
+\begin{figure}[h]
+    \centering
+    \scalebox{0.7}{
+        \begin{tikzpicture}[minimum size=58pt,scale=0.45, every node/.style={scale=0.45, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/hypotheses_original.tex}
+        \end{tikzpicture}
+    }
+    %\rule{\textwidth}{0.3pt}
+    \caption[Original Hypotheses Graph]{Explanatory example of a hypotheses graph that is
+        constructed as the first step of Conservation Tracking. Note that edges are only potential
+        assignments and nodes can represent false positive detection. Thus, the states of all nodes
+        and edges -- active ($\ge 1$) or inactive ($0$) -- are inferred by the conservation tracking
+        factor graph. }
+    \label{fig:gmm-hypotheses-graph-orig}
+\end{figure}
+
+% saveboxes for node descriptions
+\newsavebox{\captionA} \savebox{\captionA}{\small\tikz[baseline, inner sep=1pt]\node[thick, draw,
+    circle, hypotheses_one_object, text=black] at (0,2.5pt){\tiny $X$};} \newsavebox{\captionB}
+\savebox{\captionB}{\small\tikz[baseline, inner sep=1pt]\node[thick, draw, circle,
+    hypotheses_two_objects, text=black] at (0,2.5pt){\tiny $X$};} \newsavebox{\captionC}
+\savebox{\captionC}{\small\tikz[baseline, inner sep=1pt]\node[thick, draw, circle,
+    hypotheses_three_objects, text=black] at (0,2.5pt){\tiny $X$};} \newsavebox{\captionD}
+\savebox{\captionD}{\small\tikz[baseline, inner sep=1pt]\node[thick, draw, circle,
+    text=black, hypotheses_new_detection] at (0,2.5pt){\tiny $X$};}
+\newsavebox{\captionE} \savebox{\captionE}{\small\tikz[baseline, inner sep=1pt]\path[draw,
+    hypotheses_new_transition, very thick, dotted] (0,2.5pt) edge (10pt, 2.5pt);} After inference on
+the factor graph yielded a globally optimal solution, inactive edges and nodes are removed from the
+hypotheses graph and. Furthermore, nodes reflect the state of the corresponding random variables. In
+the presented example, this means that $T_{3\to 7}^t$ and $T_{5\to 9}^{t+1}$ are pruned in
+\cref{fig:gmm-hypotheses-graph-inferred} and nodes are color coded according to their state. This is
+the intermediate tracking result for the conservation tracking.
+\begin{figure}
+    \centering
+    \scalebox{0.7}{
+        \begin{tikzpicture}[minimum size=58pt,scale=0.45, every node/.style={scale=0.45, text=black, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/hypotheses_after_inference.tex}
+        \end{tikzpicture}
+    }
+    %\rule{\textwidth}{0.3pt}
+    \caption[Hypotheses Graph with inferred result]{Hypotheses Graph after Inference: The colors
+        indicate the number of objects  in the connected component: one object
+        $\left(\protect\usebox{\captionA}\right)$, two objects $\left(\protect\usebox{\captionB}\right)$ or three
+        objects $\left(\protect\usebox{\captionC}\right)$. Inactive edges have been removed from the
+        original graph in \cref{fig:gmm-hypotheses-graph-orig}.}
+    \label{fig:gmm-hypotheses-graph-inferred}
+\end{figure}
+
+For the further procedure, a subgraph of the hypotheses graph is formed by taking only
+those nodes into account that represent merged objects, \usebox{\captionB} and \usebox{\captionC} in
+our example, or share an edge with such a node. All edges connected to a merger node are part of the
+subgraph as well. From \cref{fig:gmm-hypotheses-graph-inferred}, the subgraph
+\begin{align}
+    \label{eq:gmm-subgraph}
+    G_{\text{sub}} &= \left(\mathcal{X}_{\text{sub}}, \mathcal{T}_{\text{sub}}\right), \\
+    \mathcal{X}_{\text{sub}} &=
+    \left\{X_2^t, X_3^t, X_6^{t+1}, X_7^{t+1}, X_9^{t+2}, X_{11}^{t+3}, X_{12}^{t+3},
+        X_{13}^{t+3}\right\} \\
+    \mathcal{T}_{\text{sub}} &= \left\{T_{2\to 6}^t, T_{3\to 6}^t, T_{6\to 9}^{t+1}, T_{7\to
+            9}^{t+1}, T_{9\to 11}^{t+2}, T_{9\to 12}^{t+2}, T_{9\to 13}^{t+2} \right\}
+\end{align}
+is extracted.
+
+Now, $G_{\text{sub}}$ is modified with the aim that each node in the graph represents a single cell,
+\ie no merged objects remain in the graph in \cref{fig:gmm-hypotheses-graph-subset}. This is where
+the application of Gaussian mixture models comes into play: First, for each merger node, a GMM is
+fit according to the inferred number of objects $k$, with the means $\left\{\MUH\right\}_{h=1\hdots
+    k}$ estimating the region centers of the individual cells comprised in the connected component
+represented by that node. Then, the merger node is replaced by $k$ new nodes
+$\left(\usebox{\captionD}\right)$, one for each of the deduced cells.
+
+In addition, contrary to merger nodes, which may not be dividing objects, a division of a single cell
+can occur at one time step previous to a merging event. In that case and since the constraints on
+the subgraph disallow divisions in the subgraph (\cref{eq:no-division-constraint}), if at least one
+of the two children cells is part of a merged object, the parent node needs to be duplicated
+(\cref{fig:gmm-division-duplication}). These identical and interchangeable duplicates are rejoined
+after inference. Specifically, the duplicates guarantee the validity of the formulation of the
+constraints (\crefrange{eq:main}{eq:cons-sub-in-e}) for inference on the subgraph in the presence of
+divisions with child cells that are part of merged objects.
+
+Finally, edges %$\left(\usebox{\captionE}\right)$
+(dotted lines) are added according to the edges formerly connected to the merger nodes. For each of
+these original edges, $k$ new edges are introduced, connecting a new node to the corresponding
+counterpart of the old edge. After discarding the merger nodes and associated edges, the hypotheses
+graph looks like \cref{fig:gmm-hypotheses-graph-subset}.
+
+\begin{figure}
+    \centering
+    \scalebox{0.7}{
+        \begin{tikzpicture}[minimum size=58pt,scale=0.45, every node/.style={scale=0.45, text=black, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/hypotheses_subset.tex}
+        \end{tikzpicture}
+    }
+    %\rule{\textwidth}{0.3pt}
+    \caption[Subset of hypotheses graph with newly created nodes]{Subset of hypotheses graph with
+        newly created nodes $\left(\protect\usebox{\captionD}\right)$ and edges
+        $\left(\protect\usebox{\captionE}\right)$. }
+    \label{fig:gmm-hypotheses-graph-subset}
+\end{figure}
+
+\newsavebox{\captionF}
+\savebox{\captionF}{\small\tikz[baseline, inner sep=1pt]\node[thick, draw, circle,
+    hypotheses_division_duplicate, text=black] at (0,2.5pt){\tiny $X$};}
+
+\begin{figure}
+    \centering
+    % \begin{tabular}{c|c|c}
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \begin{tikzpicture}[minimum size=58pt,scale=0.35, every node/.style={scale=0.35, text=black, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/division_detected.tex}
+        \end{tikzpicture}
+        \caption{Division $X_2^t$ at time $t$ with a child that is part of merger $X_3^{t+1}$ at
+            time $t+1$. As before, $\left(\protect\usebox{\captionA}\right)$ and
+            $\left(\protect\usebox{\captionB}\right)$ denote one and two objects respectively.}
+        \label{subfig:gmm-division-into-merger}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \begin{tikzpicture}[minimum size=58pt,scale=0.35, every node/.style={scale=0.35, text=black, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/division_duplicated.tex}
+        \end{tikzpicture}
+        \caption{Subgraph for merger resolution: Divisions are duplicated
+            $\left(\protect\usebox{\captionF}\right)$. Dashed circles indicate nodes that are not
+            part of the merger resolving process. Note that the duplicated nodes $X_2^t$ and
+            $\bar{X}_2^t$ are identical and can be interchanged without alteration of the tracking
+            result.}
+        \label{subfig:gmm-division-duplicate}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \begin{tikzpicture}[minimum size=58pt,scale=0.35, every node/.style={scale=0.35, text=black, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/division_inferred.tex}
+        \end{tikzpicture}
+        \caption{Result after merger resolving and reconstruction of cell identities: The duplicates
+        of $X_2^t$ are reunited in a single node.}
+        \label{subfig:gmm-division-inferred}
+    \end{subfigure}
+    %\end{tabular}
+    %\rule{\textwidth}{0.3pt}
+    \caption[Division into a merged object]{Resolution of a merger event involving a division of an
+        object in the previous time step into a merger
+        object~(\subref{subfig:gmm-division-into-merger}). First, the division node is
+        duplicated~(\subref{subfig:gmm-division-duplicate}), then inference on the subgraph --
+        including one of the duplicates -- yields a tracking solution. Finally, the duplicates of
+        the division node are reunited~(\subref{subfig:gmm-division-inferred}).}
+    \label{fig:gmm-division-duplication}
+\end{figure}
+
+Using this modified subgraph $G_{\text{sub}}$, a factor graph is built in the manner of the
+conservation tracking with modified constraints:
+\begin{enumerate}
+      \item The conservation tracking marks all active detections true positive and the identities of
+    merged objects are reconstructed. Therefore, each detection variable in $G_{\text{sub}}$ is
+    fixed to one (Equation~\ref{eq:true-detection-constraint}).
+      \item Divisions are disallowed (Equation~\ref{eq:no-division-constraint}) and division into merged
+    objects is modeled by duplication of the parent node.
+      \item With the cell identities reconstructed, each active transition variable corresponds to
+    the transition of an object of mass one (Equation~\ref{eq:mass-one-constraint}), \ie a single cell, and
+      \item Cells cannot merge or divide. Therefore, exactly one assignment variable is active in
+    each outgoing (Equation~\ref{eq:cons-sub-out-a}) and incoming (Equation~\ref{eq:cons-sub-in-a})
+    factor.
+\end{enumerate}
+In the sense of the conservation tracking factor graph, the constraints on the value range of the
+random variables can be formulated as
+\begin{subequations} \label{eq:main}
+    \begin{alignat}{2}
+    X_i^t = &1 \; \forall \; X_i^t \in \mathcal{X}_{\text{sub}}, \label{eq:true-detection-constraint}\\
+    D_i^t =& 0 \; \forall \; i, t: X_i^t \in \mathcal{X}_{\text{sub}}, \label{eq:no-division-constraint}\\
+    0 \le T_{ij}^t \le& 1 \; \forall \;  T_{ij}^t \in \mathcal{T}_{\text{sub}}. \label{eq:mass-one-constraint}
+\end{alignat}
+\end{subequations}
+Furthermore, the constraints on outgoing and incoming assignments gives rise to the formulation of
+new outgoing energies
+\begin{subnumcases}{\label{eq:cons-sub-out} E_{\text{out}}(A_i^t, T_{ij_1}^t,\dots ,T_{ij_n}^t) =}
+    \infty, & $\sum_{l\in \{j_1,\dots , j_n\}} T_{il}^t \ne A_i^t + D_i^t = 1$ \label{eq:cons-sub-out-a} \\
+    0, & $\text{otherwise}$ \label{eq:cons-sub-out-e}
+\end{subnumcases}
+and incoming energies
+\begin{subnumcases}{\label{eq:cons-sub-in} E_{\text{in}}(V_j^{t+1}, T_{i_1j}^t,\dots ,T_{i_nj}^t) =}
+    \infty, & $\sum_{l\in \{j_1,\dots , j_n\}} T_{il}^t \ne V_i^{t+1} + D_i^{t+1} = 1$ \label{eq:cons-sub-in-a} \\
+    0, & $\text{otherwise}$ \label{eq:cons-sub-in-e}
+\end{subnumcases}
+which ensure that, if there are potential incoming or outgoing assignments, exactly one of each is
+active.
+
+The remaining factors of the conservation tracking factor graph, namely,
+$\psi_{\text{det}}$~(\cref{eq:fg-conservation-det}),
+$\phi_{\text{tr}}$~(\cref{eq:fg-conservation-trans}) and
+$\phi_{\text{div}}$~(\cref{eq:fg-conservation-div}), are left unchanged. Then, with all variables
+except for the transition variables being fixed to a certain state by constraints, minimizing the energy
+\begin{align} \argmax_{\mathcal{A}_{\text{sub}}, \mathcal{V}_{\text{sub}},
+        \mathcal{D}_{\text{sub}}, \mathcal{T}_{\text{sub}}}P(\mathcal{A}_{\text{sub}},
+    \mathcal{V}_{\text{sub}},
+    \mathcal{D}_{\text{sub}}, \mathcal{T}_{\text{sub}})  &= \argmax_{\mathcal{T}_{\text{sub}}} P(\mathcal{T}_{\text{sub}})\\
+    &=\argmin_{\mathcal{T}_{\text{sub}}} E(\mathcal{T}_{\text{sub}}) \\
+    &=\argmin_{\mathcal{T}_{\text{sub}}}\left(-\log P\left(\mathcal{T}_{\text{sub}}\right)\right).
+    \label{eq:fg-conservation-map-resolve}
+\end{align}
+for the MAP solution in an ILP is a function of the transition variables only. Finally, inactive
+transitions are discarded from the graph
+(\cref{fig:gmm-hypotheses-graph-subset-after-inference}). This concluding graph yields an optimal
+solution for the assignment problem and furthermore contains the reconstructed identities of cells
+that were originally lost due to undersegmentation.
+
+With the introduction of the conservation tracking with cell identity reconstruction completed,
+\cref{sec:gmm-experiments} demonstrates the performance of the method on two challenging data sets.
+
+\begin{figure}
+    \centering
+    \scalebox{0.7}{
+        \begin{tikzpicture}[minimum size=58pt,scale=0.45, every node/.style={scale=0.45, text=black, font=\LARGE}, thick]
+            \input{images/gmm/gmm_hyp_graph_subset/hypotheses_subset_inferred.tex}
+        \end{tikzpicture}
+    }
+    %\rule{\textwidth}{0.3pt}
+    \caption{Subset of hypotheses graph final result after inference }
+    \label{fig:gmm-hypotheses-graph-subset-after-inference}
+\end{figure}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

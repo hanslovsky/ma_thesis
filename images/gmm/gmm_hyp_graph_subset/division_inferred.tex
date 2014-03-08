@@ -1,0 +1,50 @@
+    \begin{scope}
+        \node (t1) {\huge $t$};
+        \node[hypothesesdetection, below=of t1, circle, draw] (x11) {$X_1^t$};
+        \node[hypothesesdetection, below=of x11, circle, draw] (x12) {$X_2^t$};
+    \end{scope}
+    \begin{scope}[on background layer]
+        \node[hypotheses_division_duplicate, below=of x12, circle, draw, dashed] (x13) {$\bar{X}_2^t$};
+    \end{scope}
+    
+    
+    \begin{scope}
+        \node[right=of t1, xshift=-6mm] (t2) {\huge $t+1$};
+        \node[hypothesesdetection, below=of t2, circle, draw] (x21) {$X_8^{t+1}$};
+        \node[hypothesesdetection, below=of x21, circle, draw] (x22) {$X_{9}^{t+1}$};
+        \node[hypothesesdetection, below=of x22, circle, draw] (x23)  {$X_4^{t+1}$};
+    \end{scope}
+    \begin{scope}[on background layer]
+        
+    \end{scope}
+    
+    \begin{scope}
+        \node[right=of t2, xshift=-6mm] (t3) {\huge $t+2$};
+        \node[hypothesesdetection, below=of t3, circle, draw] (x31) {$X_5^{t+2}$};
+        \node[hypothesesdetection, below=of x31, circle, draw] (x32) {$X_6^{t+2}$};
+        \node[hypothesesdetection, below=of x32, circle, draw] (x33) {$X_7^{t+2}$};
+    \end{scope}
+    
+
+    \begin{scope}[on background layer]
+        \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+        fit=(x11) (x12) (x13), inner sep=6mm] (b1) {};
+        \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+        fit=(x21) (x22) (x23), inner sep=6mm] (b2) {};
+        \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+        fit=(x31) (x32) (x33), inner sep=6mm] (b3) {};
+    \end{scope}
+
+    \path[hypothesestransition] (x11) edge (x21);
+    \path[hypothesestransition] (x12) edge (x22);
+    \path[hypothesestransition] (x12) edge (x23);
+
+    \path[hypothesestransition] (x21) edge (x31);
+    \path[hypothesestransition] (x22) edge (x32);
+    \path[hypothesestransition] (x23) edge (x33);
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

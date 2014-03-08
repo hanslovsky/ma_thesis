@@ -1,0 +1,37 @@
+\input{preamble/docclass.tex}
+\input{preamble/packages.tex}
+\input{preamble/commands.tex}
+\input{preamble/settings.tex}
+\input{preamble/tikz-styles.tex}
+\input{preamble/titlepage_styles.tex}
+
+\begin{document}
+
+\getmainfile
+\getabspath{\themainfile}
+\let\mainabsdir\theabsdir
+\let\mainabspath\theabspath
+
+\selectlanguage{english}
+
+% \linespace{1.5}
+
+\frontmatter
+\KOMAoptions{twoside = false}
+\input{pages/frontpage.tex}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+

@@ -1,0 +1,49 @@
+\chapter{Probabilistic Graphical Models}
+\label{cha:probabilistic_graphical_models}
+
+In mathematical graph theory a \emph{graph}
+\begin{align}
+    G &= (\mathcal{V},\mathcal{E}) \\
+    \mathcal{V} &= \{V_1,\hdots ,V_n\}
+\end{align}
+is defined as an ordered pair of a set $\mathcal{V}$ of \emph{vertices} (also \emph{nodes}) and a
+set $\mathcal{E}$ of \emph{edges} (also \emph{arcs} if directed) between pairs of vertices
+~\citep[34]{koller_09_probabilistic}. Arcs are directed ($V_i\to V_j$), with an arrow pointing from
+parent to child node, representing the direction of the interaction, while edges are undirected
+($V_i \textbf{ --- } V_j$). More concisely, this implies structure, which can be exploited for
+modeling probability distributions as \emph{probabilistic graphical models}. Here, nodes represent
+\emph{random variables} and edges describe their independence/dependence
+relationships~\citep[57]{barber_12_bayesian}.
+
+The graphical models as defined in \cref{sec:gm-graphical-models} can be utilized to model
+tracking-by-assignment problems as described in \cref{cha:gm-in-tracking,cha:joint}. However, as a
+first step, \cref{sec:probability-theory} clarifies basic probabilistic concepts that are used
+throughout this thesis and defines an unambiguous notation thereof.
+% Closely related to
+% this are \emph{factor graphs} that can describe factorized probability distributions and are
+% especially useful when it comes to inference, \ie extraction of information from the graphical
+% model. 
+
+\input{content/graphical_models_and_tracking/probability_base}
+\input{content/graphical_models_and_tracking/graphical_models}
+
+\chapter{Graphical Models and their Application in Cell Tracking}
+\label{cha:gm-in-tracking}
+Creating cell tracks and lineages from raw data is a demanding task with challenging requirements
+described in \cref{cha:introduction}. One way of approaching this task is group the tracking into
+two separate objectives, namely first detecting all cells in the data and then find the correct
+assignments between them. First, \cref{sec:tracking-by-assignment} shows how the assignment task can
+be formulated based on the detection outcome. Then, the probabilistic graphical models introduced in
+\cref{cha:probabilistic_graphical_models} are utilized to solve the assignment task and produce a
+meaningful tracking result. Furthermore, \cref{cha:GMM} extends the approach presented in
+\cref{subsec:fg-conservation}, while \cref{cha:joint} introduces a new tracking method, that blurs
+the border between detection and assignment.
+
+\label{cha:graphical_models_and_tracking}
+\input{content/graphical_models_and_tracking/tracking_by_assignment}
+\input{content/graphical_models_and_tracking/tracking_as_a_factor_graph}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End: 

@@ -1,0 +1,34 @@
+\section{Pixel Classification}
+\label{sec:pixel-classification}
+
+Pixel classification is the task of assigning each pixel $p$ in the image $I$ to one of $n$ possible foreground
+classes or background. A classifier
+\begin{align}
+    \mathcal{C}\colon \mathcal{R}^d &\to [0,1]^{n+1} \\
+    x^p &\mapsto y^{n+1}    
+\end{align}
+maps from the d-dimensional feature space to the interval $[0,1]^{n+1}$ with $y_k^p$ representing the
+probability of pixel $p$ belonging to the $k$th class. Hence,
+\begin{align}
+    \sum_{i=1}^{n+1}y_i^p = 1
+\end{align}
+must hold. The class label for the pixel is the label with highest probability given by
+\begin{align}
+    l^p = \argmax y^p, 
+\end{align}
+also known as ``winner takes it all''. Alternatively, in a two-class classification problem, \ie one
+foreground \vs background, using a threshold $t \in (0,1)$ as decision boundary also yields a
+segmentation, that -- in case of $t=0.5$ -- is equivalent to the $\argmax$ decision.
+
+In general, any classifier that maps to $[0,1]$ can be used for pixel classification. In practice,
+the \emph{random forest} classifier is a state-of-the-art classification algorithm, that is part of
+the ``interactive learning and segmentation toolkit''
+(ILASTIK)\footnote{http://www.ilastik.org}. ILASTIK calculates pixel features using image filters,
+such as Gaussian Smoothing, Guassian Gradient Magnitude or Structure Tensor.
+For training the random forest classifier, the user needs to give examples for each of the possible
+classes. ILASTIK then trains the classifier based on these examples.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

@@ -1,0 +1,129 @@
+\subsection{Conditional Random Fields}
+\label{subsec:gm-crf}
+
+Conditional random fields (CRFs) are useful for modeling conditional distributions
+$P(\mathcal{Y}|\mathcal{X})$ over random output variables $(\mathcal{Y}$) conditioned on the random
+input variables $\mathcal{X}$~\citep[142]{koller_09_probabilistic}. In order to
+formally define CRFs, we first introduce \emph{cliques}, \emph{Markov networks} and the \emph{Markov
+    property}.
+
+\begin{mydef}[{\citealp[23]{barber_12_bayesian}}]
+    \label{def:clique}
+    In an undirected graph $G = (\mathcal{V}, \mathcal{E})$, a \emph{clique} is a fully connected
+    subset of the vertices $\mathcal{V}_c\subseteq\mathcal{V}$, \ie there is a pairwise edge between
+    all members of $\mathcal{V}_c$, or more formally: $\exists (V_i \textbf{ --- } V_j) \in
+    \mathcal{E}\; \forall \; V_i \ne V_j \in \mathcal{V}_c$. A clique is called \emph{maximal
+        clique}, if, for all vertices that are not in the clique $\mathcal{V} \setminus
+    \mathcal{V}_c$, the union $\mathcal{V}_c^{\prime} = \mathcal{V}_c \cup \{V_a : V_a \in
+    \mathcal{V} \setminus \mathcal{V}_c\}$ of the clique with an arbitrary vertex is not a
+    clique. The largest maximal clique in a graph is called the \emph{maximum clique}.
+\end{mydef}
+
+With \cref{def:clique}, we now can define a \emph{Markov network} and its graph representation.
+
+\begin{mydef}[{\citealp[59]{barber_12_bayesian}}]
+    \label{def:markov-network}
+    A \emph{Markov network} over random variables $\mathcal{X}$ is a distribution that factorizes
+    into non-negative potentials (functions) $\phi_i(\mathcal{X}_i)$ on subsets of the random
+    variables $\mathcal{X}_i\subseteq\mathcal{X}$:
+    \begin{align}
+        \label{eq:markov-network}
+        P(\mathcal{X}) = \frac{1}{Z}\prod_{i=1}^N\phi_i(\mathcal{X}_i)
+    \end{align}
+    The constant $Z$ ensures normalization. In an undirected graph representation $G$, the subsets
+    of variables $\mathcal{X}_i\subseteq\mathcal{X}$ correspond to the maximal cliques in $G$.
+\end{mydef}
+The Markov property can be defined in terms of a Markov network.
+\begin{mydef}[{\citealp[61]{barber_12_bayesian}; \citealp[16]{hammersley_71_markov}}]
+    \label{def:markov-property}
+    Let ($\mathcal{A}\subseteq\mathcal{X}$, $\mathcal{B}\subseteq\mathcal{X}$,
+    $\mathcal{S}\subseteq\mathcal{X}$), represented by vertices ($\mathcal{V}_{\mathcal{A}}$,
+    $\mathcal{V}_{\mathcal{B}}$, $\mathcal{V}_{\mathcal{S}}$), be a set of disjoint subsets of
+    variables of a Markov network. Then, the \emph{Markov property} states that $\mathcal{A}
+    \independent \mathcal{B} | \mathcal{S}$, if there is no path from a member of
+    $\mathcal{V}_{\mathcal{A}}$ to a member of $\mathcal{V}_{\mathcal{B}}$ or if every path of any
+    member of $\mathcal{V}_{\mathcal{A}}$ to any member of $\mathcal{V}_{\mathcal{B}}$ passes
+    through $\mathcal{V}_{\mathcal{S}}$).
+\end{mydef}
+
+In particular, % for positive potentials $\phi_k > 0$,
+a random variable in a Markov network conditioned on its neighbors is independent of the remaining
+variable:
+\begin{align}
+    \label{eq:local-markov-property}
+    P(X|\mathcal{X}\setminus X) = P(X|\neighbor(X)) \\
+    \neighbor(X) = \{X^{\prime} \in \mathcal{X} : \exists (V^{\prime} \textbf{ --- } V) \in \mathcal{E}\}
+\end{align}
+With the knowledge about Markov networks, \emph{conditional random fields} can be defined in terms
+of undirected graphical models.
+
+\begin{mydef}[{{\citealp[234]{barber_12_bayesian}; \citealp[3]{lafferty_01_conditional}}}]
+    \label{def:crf}
+    Let $\mathcal{X}$ be a set of observable (input) random variables and $\mathcal{Y}$ be a set of
+    label (output) random variables. Then a \emph{conditional random field} is a conditional
+    distribution
+    \begin{align}
+        \label{eq:crf}
+        P(\mathcal{Y}|\mathcal{X}) = \frac{1}{Z(X)}\prod_k\phi(\mathcal{Y}_k, \mathcal{X}_k)
+    \end{align}
+    over the output $\mathcal{Y}$ conditioned on the input $\mathcal{X}$ that factorizes into
+    non-negative potentials $\phi_k$. A CRF can be seen as a Markov network on the output variables
+    $\mathcal{Y}$ conditioned on the input $\mathcal{X}$ with a graphical representation
+    $G=(\mathcal{V}, \mathcal{E})$. More precisely, the set of vertices
+    $\mathcal{V}=\{\mathcal{V}_{\mathcal{Y}}, \mathcal{V}_{\mathcal{X}}\}$ comprises the subsets
+    that form vertices representing output variables $\mathcal{V}_{\mathcal{Y}}$ and input variables
+    $\mathcal{V}_{\mathcal{X}}$. Therefore, the Markov property holds for $\mathcal{Y}$ conditioned
+    on $\mathcal{X}$ with $G_{\mathcal{Y}}=(\mathcal{V}_{\mathcal{Y}}, \mathcal{E}_{\mathcal{Y}})$.
+    % Let $G = (\mathcal{V}, \mathcal{E})$ be an undirected graph, whose vertices $V\in\mathcal{V}$
+    % index a set of random variables $Y_V \in \mathcal{Y}$ over labels, and a set of random variables
+    % $\mathcal{X}$ over observations. Furthermore, the Markov property holds for $\mathcal{Y}$
+    % conditioned on $\mathcal{X}$. Then $(X,Y)$ is a \emph{conditional random field}.
+    % \begin{align}
+    %     \label{eq:gm-crf}
+    %     p(\mathcal{Y}|\mathcal{X}) = \frac{1}{Z(\mathcal{X})}\prod_k\phi_k(\mathcal{Y}_k, \mathcal{X}_k)
+    % \end{align}
+    % over observed variables $\mathcal{X}$ and random variables $\mathcal{Y}$ consisting of $k$
+    % factors $phi_k$ that are non-negative functions of subsets $\mathcal{X}_k \subseteq \mathcal{X}$
+    % and $\mathcal{Y}_k \subseteq \mathcal{Y}$.
+\end{mydef}
+Normalization is ensured in \cref{eq:crf} by division by the partition function
+\begin{align}
+    \label{eq:gm-crf-partition}
+    Z(\mathcal{X}) = \sum_{\mathcal{Y}}\prod_k\phi_k(\mathcal{Y}_k, \mathcal{X}_k),
+\end{align}
+which is calculated by summation over all possible states of the output variables $\mathcal{Y}$.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \begin{tikzpicture}[thick, on grid, every node/.style={font=\small, scale=1.5}, baseline=(v.south)]
+            \input{images/crf/example.tex}
+        \end{tikzpicture}
+        %\rule{\textwidth}{0.3pt}
+        \caption{CRF}
+        \label{fig:gm-crf-example}
+    \end{subfigure}
+    ~
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \begin{tikzpicture}[thick, on grid, every node/.style={font=\small, scale=1.5}, baseline=(v.south)]
+            \input{images/crf/example_factor_representation.tex}
+        \end{tikzpicture}
+        %\rule{\textwidth}{0.3pt}
+        \caption{Factor graph representation for the CRF}
+        \label{fig:gm-crf-example-factor}
+    \end{subfigure}
+    \caption[Conditional random field example]{Conditional random field example
+        (\subref{fig:gm-crf-example}) with input (gray) and output variables (beige), following the
+        distribution $p(y_1, y_2|x_1, x_2) = \frac{1}{Z}\phi_1(x_1, y_1)\phi_2(x_2,
+        y_2)\phi(y_1,y_2)$. Its factor graph (\cref{subsec:factor-graphs}) representation is
+        shown in (\subref{fig:gm-crf-example-factor}).}
+    \label{fig:gm-crf}
+\end{figure}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

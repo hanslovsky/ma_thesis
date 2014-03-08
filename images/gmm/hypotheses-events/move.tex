@@ -1,0 +1,23 @@
+\begin{scope}
+    \node (t1) {\huge $t$};
+    \node[hypotheses_one_object, below=of t1.north, circle, draw,yshift=10mm] (x11) {$X_i^t$};
+\end{scope}
+
+\begin{scope}
+    \node[right=of t1, xshift=-10mm] (t2) {\huge $t+1$};
+    \node[hypotheses_one_object, below=of t2.north, circle, draw,yshift=10mm] (x21) {$X_j^{t+1}$};
+\end{scope}
+
+\path[hypothesestransition] (x11) edge (x21);
+
+\begin{scope}[on background layer]
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x11), inner sep=4mm] (b1) {};
+    \node[rectangle, draw, color=hypothesesbackground!40, fill=hypothesesbackground!30,
+    fit=(x21), inner sep=4mm] (b2) {};
+\end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

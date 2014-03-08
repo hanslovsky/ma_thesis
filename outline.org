@@ -1,0 +1,59 @@
+# -*- mode: org -*-
+Addressing Undersegmentation in Cell Tracking
+
+* Introduction
+
+** Cell Tracking in Developmental Biology
+** Contributions
+*** Merger-Resolution
+*** Joint Segmentation and Tracking
+** Structure of the Document
+
+* Related Work
+  might be part of Theory section
+
+* Cell Tracking
+** Requirements and Challenges
+   divisible, indistinguishable objects
+** Approaches
+*** Tracking by Assignment
+    detect object candidates; then do tracking on the object level
+
+* Graphical Models and Tracking
+  Used for modelling probability distributions...
+** Factor Graphs
+   Two kinds of nodes: factors and RVs
+** Tracking as a Factor Graph
+   Tracking represented by fg
+*** Chaingraph Tracking
+    model etc pp
+*** Conservation Tracking
+    model etc pp
+    
+* Segmentation
+** Pixel Classification
+
+* Addressing Undersegmentation
+** GMM for Conservation Tracking
+** Joint Segmentation and Tracking
+*** Overview
+*** Oversegmentation
+*** Region Merging
+*** Factors
+*** Constraints
+*** Features
+*** Classifiers
+
+* Experiments
+** Data Description
+** Merger-Resolution
+*** Evaluation Measures
+*** Results and Comparison
+** Joint Segmentation and Tracking
+*** Evaluation Measures
+*** Results and Comparison
+
+* Discussion
+** Conclusion
+** Limitations
+** Future Work

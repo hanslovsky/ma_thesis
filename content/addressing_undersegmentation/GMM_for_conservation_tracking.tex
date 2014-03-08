@@ -1,0 +1,73 @@
+\chapter{Circumventing Undersegmentation - GMM for Conservation Tracking}
+\label{cha:GMM}
+
+While the conservation tracking (\cref{subsec:fg-conservation}) is capable of detecting merged
+objects and inferring the number of cells per connected component, the factor graph by itself has no
+means for separating merged objects and thus reconstructing lost tracks.  Even with the knowledge of
+merged objects, tracks will be lost, including division events. This may, depending on the number of
+merged objects in the segmentation, heavily deteriorate the tracking result -- a downgrade that can
+be evaded given the knowledge about merged objects.
+
+In order to reconstruct the lost tracks, we introduce a two-step post-processing procedure on the
+conservation tracking result depicted in \cref{fig:gmm-pipeline}:
+\begin{enumerate}
+      \item Reconstruct cells for all connected components that contain more than one cell according
+    to the conservation tracking.
+      \item Build a hypotheses graph on this subset of cells and rerun the tracking with new
+    constraints, ensuring that \label{itm:gmm-new-constraints}
+    \begin{enumerate}
+          \item all cells are active, and \label{itm:gmm-all-cells-active}
+          \item no divisions occur. \label{itm:gmm-no-divisions}
+    \end{enumerate}
+\end{enumerate}
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        % \begin{scope}[every node/.append style={yslant=0.5,xslant=-1},yslant=0.5,xslant=-1]
+        \node[anchor=south west,inner sep=0] (image) at (0,0)
+        {\includegraphics[width=\textwidth]{images/gmm/pipeline.png}};
+        \begin{scope}[x={(image.south east)},y={(image.north west)}]
+            \draw[red,line width=2pt,rounded corners, fill=red!20, fill opacity=0.3] (0.81,0.20) rectangle (1.003,0.81);
+        \end{scope}
+    % \end{scope}
+    \end{tikzpicture}
+    % \rule{\textwidth}{0.3pt}
+    \caption[Conservation tracking pipeline including merger resolution]{New conservation tracking
+        pipeline (taken from~\cite{schiegg_13_conservation}): \cref{fig:fg-conservation-pipeline} is
+    extended by the merger resolution post-processing as indicated by the red rounded rectangle.}
+\label{fig:gmm-pipeline}
+\end{figure}
+
+With evidence about the number of cells per connected component, unsupervised clustering algorithms
+are a viable choice for cell reconstruction. The key feature to be reconstructed is the center of
+mass for each cell as it is needed for both the creation of the new hypotheses graph and inference
+in order to deduct the tracking result, corrected for mergers. More precisely, it is valid to assume
+that the ellipsoidal shape of cells can be matched to covariance matrices of Gaussian
+distributions. This is in contrast and preferable to the k-means clustering
+algorithm\citep{macqueen_67_methods}. Therefore, \emph{Gaussian mixture models} (GMMs) are a viable
+choice for such a task, with implementations readily available.
+
+The new constraints which constrict inference on the subset hypotheses graph are a direct result of
+the method being a post-processing for conservation tracking: The conservation tracking factor graph
+infers the correct number of cells in the respective connected components and conservation of mass
+enforces that these numbers are consistent over time. Furthermore, no divisions may, because the
+conservation tracking disallows divisions cooccuring with mergers. Reintroducing divisions in the
+post-processing method would require deactivating cells, in order to allow for global consistency,
+which is vetoed by prerequisite that the number of cells in a connected component is correct.
+
+In the following, we show how Gaussian mixture models can be utilized for cell reconstruction in
+\cref{sec:gmm-gmm}, before describing the construction of the new hypotheses graph on the subset
+of cells and the inference of the final tracking solution in \cref{sec:gmm-hypotheses}. Finally,
+the experiments in \cref{sec:gmm-experiments} show results of the proposed method.
+
+\input{content/addressing_undersegmentation/GMM_for_conservation_tracking/gmms_and_cell_reconstruction}
+\input{content/addressing_undersegmentation/GMM_for_conservation_tracking/hypotheses_graph_and_inference}
+\input{content/addressing_undersegmentation/GMM_for_conservation_tracking/experiments}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

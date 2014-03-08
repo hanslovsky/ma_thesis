@@ -1,0 +1,74 @@
+\subsection{Bayesian Networks}
+\label{subsec:gm-bayesian-net}
+
+Bayesian Networks are graphical models that are used for modeling causal independencies. The
+structure of the graph defines the conditional dependencies of the underlying distribution.
+
+\begin{mydef}[{\citealp[37]{barber_12_bayesian}}]
+    A \emph{Bayesian network}, also \emph{belief network} or \emph{directed acyclic graphical model}
+    (DAG), is a graphical model that describes the distribution
+    \begin{align}
+        \label{eq:gm-bayesian-net}
+        P(\mathcal{X}) = \prod_{X \in \mathcal{X}}P\left(X=x|\pa(X)\right).
+    \end{align}
+    over a set of random variables $\mathcal{X}$. In the graph representation
+    \begin{align}
+        G = (\mathcal{V}, \mathcal{A}),
+    \end{align}
+    each vertex $V \in \mathcal{V}$ represents the distribution over a random variable $X_V \in
+    \mathcal{X}$ conditioned on the set of parental variables of $X_V$ as indicated by arrows from
+    each parent to child $V$.
+    % a random variable $X_V \in \mathcal{X}$. Furthermore,
+    % the set of arcs $\mathcal{A}$ is constructed in a way, such that the parents of each node
+    % $X_{V_i}\in\mathcal{X}$ are the $M$ vertices $\{V_1,\hdots,V_M\}$ that represent the random
+    % variables that $X_{V_i}$ is conditioned on.
+\end{mydef}
+
+In that context, $\pa(X_V)$ is the set of parental variables for the random variable
+$X_V\in\mathcal{X}$. In terms of a directed acyclic graph
+$G=\left(\mathcal{V},\mathcal{A}\right)$, this is the set of all random variables represented by
+nodes with an arc pointing to $V$
+\begin{align}
+    \label{gm-bayesian-parental}
+    \pa(X_V) = \left\{X_{V_i} \in \mathcal{X} : (V_i \to V) \in \mathcal{A} \right\}.
+\end{align}
+This structure is visualized by a toy example in \cref{fig:gm-bayesian-net}.  Furthermore, it can be
+exploited to determine conditional independencies of the random variables. In this regard,
+\citet{verma_88_causal} introduced the algorithm called \emph{d-separation} for the conclusion of
+conditional dependencies from a DAG. \citet[43]{barber_12_bayesian} provides a more compact
+description of the method.
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \begin{tikzpicture}[thick, on grid, every node/.style={font=\small, scale=1.5}, baseline=(v.south)]
+            \input{images/bayesian_net/example.tex}
+        \end{tikzpicture}
+        %\rule{\textwidth}{0.3pt}
+        \caption{Bayesian network: Both $X_1$ and $X_2$ have $X_3$ as a parent.}
+        \label{subfig:gm-bayesian-net-example}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \begin{tikzpicture}[thick, on grid, every node/.style={font=\small, scale=1.5}, baseline=(v.south)]
+            \input{images/bayesian_net/example_factor_representation.tex}
+        \end{tikzpicture}
+        %\rule{\textwidth}{0.3pt}
+        \caption{Factor graph (\cref{subsec:factor-graphs}) representation of
+            \cref{subfig:gm-bayesian-net-example}.}
+        \label{subfig:gm-bayesian-net-fg}
+    \end{subfigure}
+    \caption[A simple Bayesian network]{A simple Bayesian network
+        (\subref{subfig:gm-bayesian-net-example}) representing the distribution $P(x_1,x_2,x_3) =
+        P(x_1|x_3)P(x_2|x_3)P(x_3)$ and a factor graph representation (\subref{subfig:gm-bayesian-net-fg}) $P(x_1, x_2, x_3) =
+        \frac{1}{Z}\phi_1(x_1,x_3)\phi_2(x_2,x_3)\phi_3(x_3)$.}
+    \label{fig:gm-bayesian-net}
+\end{figure}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

@@ -1,0 +1,75 @@
+\section{Classifiers}
+\label{sec:joint-classifiers}
+The factors of the graphical model introduced in \cref{sec:joint-graphical-model} are enriched with
+the predictions of local classifiers for
+\begin{enumerate}
+      \item the number of cells in a connected component, the \emph{count classifier},
+      \item true detections, the \emph{detection classifier},
+      \item divisions, the \emph{division classifier}, and
+      \item moves, the \emph{move classifier}.
+\end{enumerate}
+These classifiers are specified in more detail below. \cref{cha:app-joint-classifier-features} lists
+the used features in detail in
+\crefrange{tab:joint-classifier-count}{tab:joint-classifier-division-features}.
+
+\subsection{Count Classifier}
+\label{sec:joint-classifier-count}
+The appearance of a connected component is a hint for the number of cells that are contained
+within. Naturally, the size of the component is an indicator for that and a primitive prior would be
+calculated by comparing the size of the component to the overall statistics of connected
+components. However, we want to make use of a wider range of features~(\cf
+\cref{tab:joint-classifier-count}) while avoiding modeling their importance. Therefore, we train a
+random forest classifier on annotated examples in the \emph{object classification} workflow of
+ILASTIK. The predictions are then injected into the count factors $\psi_{\text{count}}$ as prior
+belief for the number of cells contained in a connected component. Note that, for feasibility of
+training, the maximum number $n_{\text{max}}$ of objects for classifier prediction needs to be
+specified beforehand. If a connected component contains more segments -- \ie the maximum number of
+cells in a connected component -- than $n_{\text{max}}$, the ``unpredictable'' configurations with
+more cells take the same probabilities as $n_{\text{max}}$. On the other hand, if a connected
+component contains less segments than $n_{\text{max}}$, say $n_{\text{less}}$, then the prediction
+vector is cut off after the $n_{\text{less}}$-th entry. Of course, renormalization is required in
+both cases.
+
+\subsection{Region Classifier}
+\label{sec:joint-classifier-Region}
+The region classifier estimates how strongly a region resembles a cell. To this end, we train a
+random forest classifier on user annotated training examples. The used features are listed in
+\cref{tab:joint-classifier-region}. Note that the regions used for training need not be part of the
+actual final oversegmentation as they are selected by manually grouping one or more segments of the
+original segments into regions.
+
+\subsection{Division Classifier}
+\label{sec:joint-classifier-division}
+Thirdly, the division classifier rates the probability of triples of regions, ancestor and two
+children, to form a division. Here, training examples are selected by creating three groups of
+segments, one for the parent at time $t$ and two for the children at time $t+1$ for training a
+random forest classifier. Again, these division training examples need not be actual division
+hypotheses. For prediction, every tuple of transition variables
+$(Y_{i\alpha,j_1\mu_1}^t,Y_{i\alpha,j_2\mu_2}^t)$ defines a potential division triple that gets assigned a
+probability based on its features~(\cf \cref{tab:joint-classifier-division-features}). In this way,
+all potential divisions are evaluated.
+
+\subsection{Move Classifier}
+\label{sec:joint-classifier-move}
+Lastly, the move classifier rates every pair of regions associated with a transition variable. For
+this purpose, a random classifier is trained on user selected training samples, \ie tuples of
+regions at adjacent time steps. The selection of regions follows the procedure in
+\cref{sec:joint-classifier-Region}. As in division classification, every potential move, \ie every
+tuple of regions associated with an assignment variable $Y_{i\alpha,j\beta}^t$ is evaluated. On a
+final note, the prediction of the move classifier restricts the number of transition variables in
+the model. In general, the model easily grows intractable by construction. In order to reduce the
+problem size, only the best $k$ outgoing transitions remain in the model for each detection
+variable. Here, $k$ is a model parameter.
+
+With the model fully specified, namely oversegmentation~(\cref{sec:joint-oversegmentation}),
+graphical model (\cref{sec:joint-graphical-model}) and classifiers~(\cref{sec:joint-classifiers}),
+we now turn to experimental evaluation of our model.
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

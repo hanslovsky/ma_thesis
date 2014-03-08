@@ -1,0 +1,144 @@
+% Physical layer nodes
+
+\newcommand{\distancebetween}{80}
+
+\begin{scope}[
+    yshift=\distancebetween,
+    every node/.append style={yslant=0.5,xslant=-1},yslant=0.5,xslant=-1
+    ]
+    \begin{pgfonlayer}{upper}
+        % \draw[black,thin, fill=black!70!blue, opacity=1, fill opacity=0.2] (-3,1.0) rectangle (0.1,3.2);
+        \foreach \place/\x/\id/\t in {{(-2.7,2.9)/1/1/1}, {(-2.7,2.1)/2/2/1},{(-0.2,2.1)/3/5/1},
+            {(-2.7,1.3)/4/3/1}, {(-1.25,1.7)/5/4/1}} {
+            \node[hypotheses_three_objects, draw=blue!100, fill=blue!10, label=center:\footnotesize{$\displaystyle X_{\id}^{\t}$},
+            ultra thick] (a\x) at \place {\phantom{\small{0}}};
+        }
+
+        % \node[unaryfac, above of=a3,yshift=-3mm,label=above right:$\psi_{\text{det}}$] (u1) {};
+        % \path[unaryfac] (a3) edge (u1);
+        % \node[unaryfac, below right of=a5,xshift=-2.2mm,yshift=2.2mm)] (u2) {};
+        % \path[unaryfac] (a5) edge (u2);
+        % \node[unaryfac, above left of=a1,yshift=-3mm] (u3) {};
+        % \path[unaryfac] (a1) edge (u3);
+        % \node[unaryfac, above left of=a2,yshift=-3mm] (u4) {};
+        % \path[unaryfac] (a2) edge (u4);
+        % \node[unaryfac, above left of=a4,yshift=-3mm] (u5) {};
+        % \path[unaryfac] (a4) edge (u5);
+
+        % \coordinate[draw=black!0, left of=a4] (helper1) {};
+        % \coordinate[draw=black!0, left of=a3] (helper2) {};
+        % \coordinate[draw=black!0, left of=helper2] (helper3) {};
+        \node[conflict, left of=a4] (helper1) {};
+        \node[conflict, left of=a3, xshift=1mm] (helper2) {};
+        \node[conflict, yshift=5, label=above right:$\psi_{\text{det}}$] (helper4) at ($(a1)!0.5!(a3)$) {};
+        \node[count, left of=helper2] (helper3) {};
+        
+        % Physical layer links
+        \path[conflict] (a1) edge[bend left=0] (helper4);
+        \path[conflict] (helper4) edge[bend left=0] (a3);
+        \path[conflict] (a5) edge (helper2);
+        \path[conflict, bend left=10] (a4) edge (helper2);
+        
+        \path[conflict] (a5) edge[bend left=50] (helper1);
+        \path[conflict] (helper1) edge[bend left=50] (a2.west);
+
+        \path[conflict] (a3) edge[bend left=60] coordinate[pos=0.65](helpercoord1) (helper1);
+        % \gettikzxy{(helpercoord1)}{\ax}{\ay}; \coordinate (newfit) at (\ax,\ay);
+        % \path[thick,black] (helpercoord1) edge (helper1);
+        \path[conflict] (a3) edge (helper2);
+
+        \path[count] (a1) edge (helper3);
+        \path[count] (a2) edge (helper3);
+        \path[count] (a3) edge[bend right=20] (helper3);
+        \path[count] (a4) edge (helper3);
+        \path[count] (a5) edge (helper3);
+    \end{pgfonlayer}
+
+    \begin{pgfonlayer}{bgupper}
+        \node[rectangle, color=black,thick, fill=hypothesesbackground!30, opacity=0.8, draw=black,
+        fit=(a1) (a2) (a3) (a4.south) (a5) (helper1) (helpercoord1), inner sep=5mm, opacity=0.8, label={[xshift=7mm]{$t=1$}}]
+        (bgup) {};
+    \end{pgfonlayer}
+
+    % \path[conflict] (helper1) edge[bend left=80] (a2.north west);
+
+    % \path[conflict] (a2) edge
+\end{scope}
+
+
+
+
+
+\begin{scope}
+    [
+    every node/.append style={yslant=0.5,xslant=-1},yslant=0.5,xslant=-1
+    ]
+    \begin{pgfonlayer}{lower}
+        % \draw[black,thin, fill=black!70!blue, opacity=1, fill opacity=0.2] (-3,1.0) rectangle (0.1,3.2);
+        % Overlay layer nodes
+        \foreach \place/\i/\id/\t in {{(-2.7,2.9)/1/6/2},{(-0.2,2.1)/2/8/2},{(-2.7,1.3)/3/7/2}}
+        \node[hypotheses_three_objects, draw=blue!100, fill=blue!10, label=center:\footnotesize{$\displaystyle X_{\id}^{\t}$},
+        ultra thick] (b\i) at \place {\phantom{\small{0}}};
+        % \node[unaryfac, above of=b2,yshift=-3mm,label=above right:$\psi_{\text{det}}$] (ub1) {};
+        % \path[unaryfac] (b2) edge (ub1);
+        % \node[unaryfac, above left of=b1,yshift=-3mm] (ub2) {};
+        % \path[unaryfac] (b1) edge (ub2);
+        % \node[unaryfac, above left of=b3,yshift=-3mm] (ub3) {};
+        % \path[unaryfac] (b3) edge (ub3);
+        
+        % Overlay layer links
+        \path[conflict] (b1) edge (b2);
+        \path[conflict] (b3) edge (b2);
+        \node[conflict] (c1) at ($(b1)!0.5!(b2)$) {};
+        \node[conflict] (c2) at ($(b2)!0.5!(b3)$) {};
+        \node[count, label={[yshift=2mm]left:$\psi_{\text{count}}$}] (c3) at ($(b1)!0.5!(b3)!0.3!(b2)$) {};
+
+        \path[count] (b1) edge (c3);
+        \path[count] (b2) edge (c3);
+        \path[count] (b3) edge (c3);
+    \end{pgfonlayer}
+
+    \begin{pgfonlayer}{bglower}
+        % \draw
+        % let \p1=(bgup), \p2=($(bgup.north) - (bgup.south)$), \p3=($(bgup.west) - (bgup.east)$)
+        % in node[rectangle, fill=red!30,minimum height={veclen(\x2,\y2)}, minimum
+        % width={veclen(\x3,\y3)}] at(\x1,\y1) (bgdown) {};
+        \node[rectangle, black,thick, fill=hypothesesbackground!30, opacity=0.8, draw=black,
+        fit=(a1) (a2) (a3) (a4.south) (a5) (helper1) (helpercoord1), inner sep=5mm, shift=($(b2) - (a3)$), label={[xshift=7mm]{$t=2$}}] (bgdown) {};
+    \end{pgfonlayer}
+    
+\end{scope}
+
+\begin{pgfonlayer}{transition}
+    \node[hypotheses_one_object, fill=hypothesesoneobject!20, ultra thick, label=center:$Y_{5,8}^1$]
+    (as1) at ($(a3)!0.6!(b2)$) {\phantom{$t$}}; \node[transfac,opacity=1.0,
+    label=right:$\psi_{\text{out}}$] (out) at ($(a3)!0.5!(as1)$) {};
+    \path[transfac,opacity=1.0] (a3) edge (out); \path[transfac,opacity=1.0] (out) edge (as1);
+
+
+    \node[transfac,opacity=1.0, label=right:$\psi_{\text{in}}$] (in) at ($(as1)!0.5!(b2)$) {};
+    \path[transfac,opacity=1.0] (as1) edge (in);
+    \path[transfac,opacity=1.0] (in) edge (b2.center);
+
+    % edges not drawn, only indicated
+    \coordinate[above right=of in.south west] (ind1);
+    \coordinate[above left=of in.south east] (ind2);
+    \path[transfac,opacity=0.5,dashed] (in.north) edge (ind1);
+    \path[transfac,opacity=0.5,dashed] (in.north) edge (ind2);
+
+    \coordinate[below right=of out.north west] (ind3);
+    \coordinate[below left=of out.north east] (ind4);
+    \path[transfac,opacity=0.5,dashed] (out) edge (ind3);
+    \path[transfac,opacity=0.5,dashed] (out) edge (ind4);
+\end{pgfonlayer}
+
+
+% \begin{scope}
+%     \node[hypotheses_three_objects, draw=blue!100, fill=blue!20, label=center:\footnotesize{$\displaystyle X_{\id}^{\t}$},
+%     ultra thick]
+% \end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../../main"
+%%% End: 

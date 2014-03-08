@@ -1,0 +1,12 @@
+\begin{scope}
+    \node[RVnode] (v) {$X_1$};
+    \node[RVnode, above=of v.north] (v1) {$X_2$};
+    \node[RVnode, xshift=-40] at ($(v)!0.5!(v1)$) (h) {$X_3$};
+    \path (h) edge[connect] (v);
+    \path (h) edge[connect] (v1);
+\end{scope}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 

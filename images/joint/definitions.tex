@@ -1,0 +1,92 @@
+\def\arraystretch{0.5}
+% \setlength{\tabcolsep}{1pt}
+\begin{tabularx}{\textwidth}{p{5cm}l}
+    \toprule
+    Definition  & Visualization \\ \midrule
+    % \begin{minipage}[t]{0.15\linewidth}\small\vspace{-53pt}{$\begin{aligned}t&=75\\\id&=446\\
+    %         k&=3\end{aligned}$}\end{minipage}&
+    % \raisebox{-0.8\height{\includegraphics...}}
+    Raw Data (original image \& enhanced contrast) &
+    \raisebox{\tablenormaltext-\height}{
+        \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/raw.png}}
+    \raisebox{\tablenormaltext-\height}{
+        \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/raw_contrast.png}} \\ & \\
+    Segment&
+    \raisebox{\tablenormaltext-\height}{
+        \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/colored00.png}} \\ & \\
+    Region (with ids) &
+    \raisebox{\tablenormaltext}{
+        \begin{tikzpicture}[baseline=(image1.north)]
+            \node[anchor=south west,inner sep=0] (image1) {
+                \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/colored00.png}};
+            \begin{scope}[x={(image1.south east)},y={(image1.north west)}]
+                \node[region_id] at (0.4, 0.75) {\huge{$1$}};
+                \node[region_id] at (0.65, 0.7) {\huge{$2$}};
+                \node[region_id] at (0.5, 0.32) {\huge{$3$}};
+                % helpers
+                % http://tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz/9561
+                % \draw[help lines,xstep=.1,ystep=.1] (0,0) grid (1,1);
+                % \foreach \x in {0,2,...,8} { \node [anchor=north] at (\x/10,0) {0.\x}; }
+                % \foreach \y in {0,2,...,8} { \node [anchor=east] at (0,\y/10) {0.\y}; }
+            \end{scope}
+        \end{tikzpicture}}
+    \raisebox{\tablenormaltext}{
+        \begin{tikzpicture}[baseline=(image2.north)]
+            \node[anchor=south west,inner sep=0] (image2) {
+                \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/colored01_all.png}};
+            \begin{scope}[x={(image1.south east)},y={(image2.north west)}]
+                \node[region_id] at (0.53, 0.73) {\huge{$4$}};
+                \node[region_id] at (0.5, 0.32) {\huge{$3$}};
+            \end{scope}
+        \end{tikzpicture}}
+    \raisebox{\tablenormaltext}{
+        \begin{tikzpicture}[baseline=(image3.north)]
+            \node[anchor=south west,inner sep=0] (image3) {
+                \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/colored02.png}};
+            \begin{scope}[x={(image1.south east)},y={(image3.north west)}]
+                \node[region_id] at (0.5, 0.32) {\huge{$5$}};
+            \end{scope}
+        \end{tikzpicture}}
+    \\ & \\
+    Connected Component&
+    \raisebox{\tablenormaltext-\height}{
+        \includegraphics[width=0.18\textwidth]{images/joint/overseg/75/02/colored02.png}} \\ & \\
+    Region Adjacency Graph (edges indicate adjacency)&
+    \raisebox{\tablenormaltext}{
+        \begin{tikzpicture}[baseline=(r1.north)]
+            \node[region_graph] (r1) {$1$};
+            \node[region_graph, right=of r1.west] (r2) {$2$};
+            \node[region_graph, below=of r1.north] (r3) {$3$};
+            \node[region_graph, right=of r3.west] (r4) {$4$};
+            \node[region_graph, right=of r2.west] (r5) {$5$};
+            \path[region_edge] (r1) edge (r2);
+            \path[region_edge] (r2) edge (r3);
+            \path[region_edge] (r3) edge (r4);
+        \end{tikzpicture}}
+    \\ & \\
+    Conflict Graph (edges indicate conflicts)&
+    \raisebox{\tablenormaltext}{
+        \begin{tikzpicture}[baseline=(r1.north)]
+            \node[conflict_graph] (r5) {$5$};
+            \node[conflict_graph, right=of r5.west] (r1) {$1$};
+            \node[conflict_graph, below=of r5.north] (r2) {$2$};
+            \node[conflict_graph, right=of r2.west] (r4) {$4$};
+            \node[conflict_graph, left=of r2.east] (r3) {$3$};
+            \path[conflict_edge] (r5) edge (r1);
+            \path[conflict_edge] (r5) edge (r2);
+            \path[conflict_edge] (r5) edge (r3);
+            \path[conflict_edge] (r5) edge (r4);
+            \path[conflict_edge] (r4) edge (r1);
+            \path[conflict_edge] (r4) edge (r2);
+        \end{tikzpicture}}
+    \\ & \\
+    \bottomrule
+    
+\end{tabularx}
+\def\arraystretch{1.0}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../../main"
+%%% End: 
